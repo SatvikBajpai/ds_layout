@@ -17,6 +17,8 @@ class ImageLayoutOptimizer {
         this.detectedEdges = [];
         this.edgeDimensions = {}; // stores user-entered dimensions for each edge
         this.layoutBounds = { width: 0, height: 0 };
+        this.hoveredEdge = null;
+        this.selectedEdges = new Set();
         
         this.populationSize = 50;
         this.generations = 100;
@@ -28,47 +30,24 @@ class ImageLayoutOptimizer {
         this.canvas = document.getElementById('layoutCanvas');
         this.ctx = this.canvas.getContext('2d');
         
-        // Add click event for dimension marking
-        this.canvas.addEventListener('click', (e) => {
-            if (this.isDimensionMode) {
-                this.handleDimensionClick(e);
-            }
-        });
-        
-        // Add zoom and pan functionality
-        this.canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? 0.9 : 1.1;
-            this.zoomLevel *= delta;
-            this.zoomLevel = Math.max(1, Math.min(5, this.zoomLevel)); // Limit zoom
-            this.drawImageToCanvas();
-        });
-        
-        // Pan functionality
-        this.canvas.addEventListener('mousedown', (e) => {
-            if (!this.isDimensionMode) {
-                this.isDragging = true;
-                this.lastMousePos = { x: e.clientX, y: e.clientY };
-            }
-        });
-        
+        // Add hover functionality for edge detection
         this.canvas.addEventListener('mousemove', (e) => {
-            if (this.isDragging && !this.isDimensionMode) {
-                const dx = e.clientX - this.lastMousePos.x;
-                const dy = e.clientY - this.lastMousePos.y;
-                this.panOffset.x += dx;
-                this.panOffset.y += dy;
-                this.lastMousePos = { x: e.clientX, y: e.clientY };
-                this.drawImageToCanvas();
-            }
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            this.checkEdgeHover(x, y);
         });
         
-        this.canvas.addEventListener('mouseup', () => {
-            this.isDragging = false;
+        this.canvas.addEventListener('click', (e) => {
+            if (this.hoveredEdge) {
+                this.selectEdge(this.hoveredEdge);
+            }
         });
         
         this.canvas.addEventListener('mouseleave', () => {
-            this.isDragging = false;
+            this.hoveredEdge = null;
+            this.drawImageToCanvas();
         });
     }
     
@@ -125,96 +104,333 @@ class ImageLayoutOptimizer {
     }
     
     detectEdges() {
-        // Simple edge detection - find major rectangular boundaries
+        // Advanced edge detection using image processing
         const { width, height } = this.layoutBounds;
+        const imageData = this.ctx.getImageData(0, 0, width, height);
+        const edges = [];
         
-        // For now, detect basic rectangular edges based on image boundaries
-        this.detectedEdges = [
+        // Detect edges using simple algorithm
+        const threshold = 50; // Edge detection threshold
+        const minLineLength = 20; // Minimum line length to consider
+        
+        // Scan for horizontal edges
+        for (let y = 1; y < height - 1; y += 5) {
+            let currentEdge = null;
+            for (let x = 1; x < width - 1; x++) {
+                const pixelIndex = (y * width + x) * 4;
+                const topPixel = ((y - 1) * width + x) * 4;
+                const bottomPixel = ((y + 1) * width + x) * 4;
+                
+                // Check for significant color change (edge)
+                const currentGray = (imageData.data[pixelIndex] + imageData.data[pixelIndex + 1] + imageData.data[pixelIndex + 2]) / 3;
+                const topGray = (imageData.data[topPixel] + imageData.data[topPixel + 1] + imageData.data[topPixel + 2]) / 3;
+                const bottomGray = (imageData.data[bottomPixel] + imageData.data[bottomPixel + 1] + imageData.data[bottomPixel + 2]) / 3;
+                
+                const edgeStrength = Math.abs(topGray - bottomGray);
+                
+                if (edgeStrength > threshold) {
+                    if (!currentEdge) {
+                        currentEdge = { start: { x, y }, end: { x, y }, direction: 'horizontal' };
+                    } else {
+                        currentEdge.end.x = x;
+                    }
+                } else {
+                    if (currentEdge && (currentEdge.end.x - currentEdge.start.x) > minLineLength) {
+                        edges.push({
+                            ...currentEdge,
+                            id: `h_${edges.length}`,
+                            name: `Horizontal Edge ${Math.floor(currentEdge.start.y)}`,
+                            length: currentEdge.end.x - currentEdge.start.x
+                        });
+                    }
+                    currentEdge = null;
+                }
+            }
+            
+            if (currentEdge && (currentEdge.end.x - currentEdge.start.x) > minLineLength) {
+                edges.push({
+                    ...currentEdge,
+                    id: `h_${edges.length}`,
+                    name: `Horizontal Edge ${Math.floor(currentEdge.start.y)}`,
+                    length: currentEdge.end.x - currentEdge.start.x
+                });
+            }
+        }
+        
+        // Scan for vertical edges
+        for (let x = 1; x < width - 1; x += 5) {
+            let currentEdge = null;
+            for (let y = 1; y < height - 1; y++) {
+                const pixelIndex = (y * width + x) * 4;
+                const leftPixel = (y * width + (x - 1)) * 4;
+                const rightPixel = (y * width + (x + 1)) * 4;
+                
+                // Check for significant color change (edge)
+                const currentGray = (imageData.data[pixelIndex] + imageData.data[pixelIndex + 1] + imageData.data[pixelIndex + 2]) / 3;
+                const leftGray = (imageData.data[leftPixel] + imageData.data[leftPixel + 1] + imageData.data[leftPixel + 2]) / 3;
+                const rightGray = (imageData.data[rightPixel] + imageData.data[rightPixel + 1] + imageData.data[rightPixel + 2]) / 3;
+                
+                const edgeStrength = Math.abs(leftGray - rightGray);
+                
+                if (edgeStrength > threshold) {
+                    if (!currentEdge) {
+                        currentEdge = { start: { x, y }, end: { x, y }, direction: 'vertical' };
+                    } else {
+                        currentEdge.end.y = y;
+                    }
+                } else {
+                    if (currentEdge && (currentEdge.end.y - currentEdge.start.y) > minLineLength) {
+                        edges.push({
+                            ...currentEdge,
+                            id: `v_${edges.length}`,
+                            name: `Vertical Edge ${Math.floor(currentEdge.start.x)}`,
+                            length: currentEdge.end.y - currentEdge.start.y
+                        });
+                    }
+                    currentEdge = null;
+                }
+            }
+            
+            if (currentEdge && (currentEdge.end.y - currentEdge.start.y) > minLineLength) {
+                edges.push({
+                    ...currentEdge,
+                    id: `v_${edges.length}`,
+                    name: `Vertical Edge ${Math.floor(currentEdge.start.x)}`,
+                    length: currentEdge.end.y - currentEdge.start.y
+                });
+            }
+        }
+        
+        // Add boundary edges as well
+        edges.push(
             {
-                id: 'top',
-                name: 'Top Edge',
+                id: 'boundary_top',
+                name: 'Top Boundary',
                 start: { x: 0, y: 0 },
                 end: { x: width, y: 0 },
                 length: width,
                 direction: 'horizontal'
             },
             {
-                id: 'right',
-                name: 'Right Edge', 
+                id: 'boundary_right',
+                name: 'Right Boundary',
                 start: { x: width, y: 0 },
                 end: { x: width, y: height },
                 length: height,
                 direction: 'vertical'
             },
             {
-                id: 'bottom',
-                name: 'Bottom Edge',
+                id: 'boundary_bottom',
+                name: 'Bottom Boundary',
                 start: { x: width, y: height },
                 end: { x: 0, y: height },
                 length: width,
                 direction: 'horizontal'
             },
             {
-                id: 'left',
-                name: 'Left Edge',
+                id: 'boundary_left',
+                name: 'Left Boundary',
                 start: { x: 0, y: height },
                 end: { x: 0, y: 0 },
                 length: height,
                 direction: 'vertical'
             }
-        ];
+        );
+        
+        this.detectedEdges = edges;
+        console.log(`Detected ${edges.length} edges`);
     }
     
     drawDetectedEdges() {
-        this.ctx.strokeStyle = '#ff6b35';
-        this.ctx.lineWidth = 3;
-        this.ctx.setLineDash([10, 5]);
-        
         for (const edge of this.detectedEdges) {
+            // Determine edge styling based on state
+            let strokeStyle = '#ff6b35';
+            let lineWidth = 2;
+            let dashPattern = [5, 3];
+            
+            if (this.selectedEdges.has(edge.id)) {
+                strokeStyle = '#22c55e'; // Green for selected
+                lineWidth = 4;
+                dashPattern = [];
+            } else if (this.hoveredEdge === edge.id) {
+                strokeStyle = '#3b82f6'; // Blue for hovered
+                lineWidth = 4;
+                dashPattern = [8, 4];
+            }
+            
+            this.ctx.strokeStyle = strokeStyle;
+            this.ctx.lineWidth = lineWidth;
+            this.ctx.setLineDash(dashPattern);
+            
             this.ctx.beginPath();
             this.ctx.moveTo(edge.start.x, edge.start.y);
             this.ctx.lineTo(edge.end.x, edge.end.y);
             this.ctx.stroke();
             
-            // Draw edge label
-            const midX = (edge.start.x + edge.end.x) / 2;
-            const midY = (edge.start.y + edge.end.y) / 2;
-            
-            this.ctx.fillStyle = '#ff6b35';
-            this.ctx.font = 'bold 14px Arial';
-            this.ctx.textAlign = 'center';
-            
-            const labelY = edge.direction === 'horizontal' ? 
-                (edge.start.y === 0 ? midY + 20 : midY - 10) : midY;
-            const labelX = edge.direction === 'vertical' ?
-                (edge.start.x === 0 ? midX + 40 : midX - 40) : midX;
+            // Draw edge label only for selected or hovered edges
+            if (this.selectedEdges.has(edge.id) || this.hoveredEdge === edge.id) {
+                const midX = (edge.start.x + edge.end.x) / 2;
+                const midY = (edge.start.y + edge.end.y) / 2;
                 
-            this.ctx.fillText(edge.name, labelX, labelY);
+                this.ctx.fillStyle = strokeStyle;
+                this.ctx.font = 'bold 12px Arial';
+                this.ctx.textAlign = 'center';
+                
+                const labelY = edge.direction === 'horizontal' ? 
+                    (edge.start.y < midY ? midY + 20 : midY - 10) : midY;
+                const labelX = edge.direction === 'vertical' ?
+                    (edge.start.x < midX ? midX + 50 : midX - 50) : midX;
+                    
+                // Add background to label
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                const textWidth = this.ctx.measureText(edge.name).width;
+                this.ctx.fillRect(labelX - textWidth/2 - 4, labelY - 8, textWidth + 8, 16);
+                
+                this.ctx.fillStyle = strokeStyle;
+                this.ctx.fillText(edge.name, labelX, labelY + 4);
+            }
         }
         
         this.ctx.setLineDash([]);
     }
     
-    showDimensionInputs() {
-        const container = document.getElementById('addedDimensions');
-        container.innerHTML = '<h4>Enter dimensions for detected edges:</h4>';
+    checkEdgeHover(mouseX, mouseY) {
+        const tolerance = 10; // Pixels
+        let foundEdge = null;
         
         for (const edge of this.detectedEdges) {
-            const div = document.createElement('div');
-            div.className = 'dimension-input-item';
-            div.innerHTML = `
-                <label>${edge.name}:</label>
-                <input type="number" id="edge-${edge.id}" placeholder="Enter feet" min="1" step="0.1">
-                <span>feet</span>
-            `;
-            container.appendChild(div);
+            const distance = this.distanceToLine(
+                mouseX, mouseY,
+                edge.start.x, edge.start.y,
+                edge.end.x, edge.end.y
+            );
+            
+            if (distance < tolerance) {
+                foundEdge = edge.id;
+                break;
+            }
         }
         
-        const calculateBtn = document.createElement('button');
-        calculateBtn.className = 'btn btn-primary';
-        calculateBtn.textContent = 'Calculate Optimal Layout';
-        calculateBtn.onclick = () => this.calculateOptimalLayout();
-        container.appendChild(calculateBtn);
+        if (foundEdge !== this.hoveredEdge) {
+            this.hoveredEdge = foundEdge;
+            this.canvas.style.cursor = foundEdge ? 'pointer' : 'default';
+            this.drawImageToCanvas();
+        }
+    }
+    
+    distanceToLine(px, py, x1, y1, x2, y2) {
+        const A = px - x1;
+        const B = py - y1;
+        const C = x2 - x1;
+        const D = y2 - y1;
+        
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        
+        if (lenSq === 0) return Math.sqrt(A * A + B * B);
+        
+        let param = dot / lenSq;
+        param = Math.max(0, Math.min(1, param));
+        
+        const xx = x1 + param * C;
+        const yy = y1 + param * D;
+        
+        const dx = px - xx;
+        const dy = py - yy;
+        
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    selectEdge(edgeId) {
+        const edge = this.detectedEdges.find(e => e.id === edgeId);
+        if (!edge) return;
+        
+        if (this.selectedEdges.has(edgeId)) {
+            // Deselect
+            this.selectedEdges.delete(edgeId);
+            delete this.edgeDimensions[edgeId];
+        } else {
+            // Select and prompt for dimension
+            const dimension = prompt(`Enter dimension for ${edge.name} (in feet):`);
+            if (dimension && !isNaN(dimension) && parseFloat(dimension) > 0) {
+                this.selectedEdges.add(edgeId);
+                this.edgeDimensions[edgeId] = parseFloat(dimension);
+            }
+        }
+        
+        this.updateDimensionsList();
+        this.drawImageToCanvas();
+    }
+    
+    showDimensionInputs() {
+        const container = document.getElementById('addedDimensions');
+        container.innerHTML = '<h4>Hover over edges to highlight, click to add dimensions:</h4>';
+        
+        const instructionDiv = document.createElement('div');
+        instructionDiv.className = 'dimension-instructions';
+        instructionDiv.innerHTML = `
+            <p><strong>🎯 How to use:</strong></p>
+            <p>• Orange lines: Detected edges</p>
+            <p>• Blue highlight: Hover over edge</p>
+            <p>• Green lines: Selected with dimensions</p>
+            <p>• Click any edge to add its measurement</p>
+        `;
+        container.appendChild(instructionDiv);
+        
+        this.updateDimensionsList();
+    }
+    
+    updateDimensionsList() {
+        const container = document.getElementById('addedDimensions');
+        
+        // Remove existing selected dimensions list
+        const existingList = container.querySelector('.selected-dimensions');
+        if (existingList) existingList.remove();
+        
+        if (this.selectedEdges.size > 0) {
+            const selectedDiv = document.createElement('div');
+            selectedDiv.className = 'selected-dimensions';
+            selectedDiv.innerHTML = '<h4>Selected Edges:</h4>';
+            
+            for (const edgeId of this.selectedEdges) {
+                const edge = this.detectedEdges.find(e => e.id === edgeId);
+                const dimension = this.edgeDimensions[edgeId];
+                
+                if (edge && dimension) {
+                    const item = document.createElement('div');
+                    item.className = 'dimension-item';
+                    item.innerHTML = `
+                        <span class="dimension-line">${edge.name}</span>
+                        <span class="dimension-value">${dimension} ft</span>
+                        <button class="remove-btn" onclick="optimizer.removeEdgeDimension('${edgeId}')">×</button>
+                    `;
+                    selectedDiv.appendChild(item);
+                }
+            }
+            
+            if (this.selectedEdges.size >= 2) {
+                const calculateBtn = document.createElement('button');
+                calculateBtn.className = 'btn btn-primary';
+                calculateBtn.textContent = 'Calculate Optimal Layout';
+                calculateBtn.onclick = () => this.calculateOptimalLayout();
+                selectedDiv.appendChild(calculateBtn);
+            } else {
+                const message = document.createElement('p');
+                message.textContent = 'Add at least 2 edge dimensions to calculate layout.';
+                message.style.color = '#666';
+                message.style.fontStyle = 'italic';
+                selectedDiv.appendChild(message);
+            }
+            
+            container.appendChild(selectedDiv);
+        }
+    }
+    
+    removeEdgeDimension(edgeId) {
+        this.selectedEdges.delete(edgeId);
+        delete this.edgeDimensions[edgeId];
+        this.updateDimensionsList();
+        this.drawImageToCanvas();
     }
     
     calculateOptimalLayout() {

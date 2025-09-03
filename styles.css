@@ -480,6 +480,20 @@ body {
     font-size: 0.9rem;
 }
 
+.selected-dimensions {
+    background: #f0f9ff;
+    border: 2px solid #0ea5e9;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.selected-dimensions h4 {
+    color: #0369a1;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
 .method-selector {
     display: flex;
     gap: 15px;

@@ -729,20 +729,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('layoutImageInput').value = '';
     };
     
-    window.startDimensionMode = function() {
-        const btn = document.getElementById('dimensionModeBtn');
-        if (imageOptimizer.isDimensionMode) {
-            imageOptimizer.isDimensionMode = false;
-            btn.textContent = 'Add Dimensions';
-            btn.classList.remove('active');
-            document.getElementById('dimensionsInputGroup').style.display = 'none';
-        } else {
-            imageOptimizer.isDimensionMode = true;
-            btn.textContent = 'Exit Dimension Mode';
-            btn.classList.add('active');
-            document.getElementById('dimensionsInputGroup').style.display = 'block';
-        }
-    };
     
     window.removeDimension = function(id) {
         imageOptimizer.removeDimension(id);
@@ -851,11 +837,19 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupEventListeners() {
     // File upload handler
     const imageInput = document.getElementById('layoutImageInput');
-    imageInput.addEventListener('change', handleImageUpload);
+    if (imageInput) {
+        imageInput.addEventListener('change', handleImageUpload);
+        console.log('Image upload listener added');
+    }
     
     // Dimension mode button
     const dimensionBtn = document.getElementById('dimensionModeBtn');
-    dimensionBtn.addEventListener('click', startDimensionMode);
+    if (dimensionBtn) {
+        dimensionBtn.addEventListener('click', startDimensionMode);
+        console.log('Dimension button listener added');
+    } else {
+        console.error('Dimension button not found!');
+    }
 }
 
 function handleImageUpload(event) {
@@ -888,11 +882,19 @@ function clearImage() {
 }
 
 function startDimensionMode() {
+    console.log('startDimensionMode called');
+    
+    if (!optimizer) {
+        console.error('Optimizer not initialized');
+        return;
+    }
+    
     if (!optimizer.uploadedImage) {
         alert('Please upload an image first.');
         return;
     }
     
+    console.log('Entering dimension mode');
     optimizer.isDimensionMode = true;
     optimizer.zoomLevel = 2; // Auto-zoom when entering dimension mode
     optimizer.panOffset = { x: 0, y: 0 }; // Reset pan

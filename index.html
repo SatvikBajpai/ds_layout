@@ -20,12 +20,36 @@
                     <h3>Configuration</h3>
                     
                     <div class="input-group">
-                        <label>Store Dimensions</label>
+                        <label>Store Shape</label>
+                        <div class="shape-selector">
+                            <label class="shape-option">
+                                <input type="radio" name="storeShape" value="rectangular" checked>
+                                <span class="shape-preview rectangular-shape"></span>
+                                <span>Rectangular</span>
+                            </label>
+                            <label class="shape-option">
+                                <input type="radio" name="storeShape" value="l-shaped">
+                                <span class="shape-preview l-shape"></span>
+                                <span>L-Shaped</span>
+                            </label>
+                            <label class="shape-option">
+                                <input type="radio" name="storeShape" value="t-shaped">
+                                <span class="shape-preview t-shape"></span>
+                                <span>T-Shaped</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Store Dimensions (feet)</label>
                         <div class="input-row">
-                            <input type="number" id="storeWidth" value="20" min="10" max="50">
+                            <input type="number" id="storeWidth" value="65" min="30" max="200">
                             <span>×</span>
-                            <input type="number" id="storeHeight" value="30" min="10" max="50">
-                            <span>meters</span>
+                            <input type="number" id="storeHeight" value="100" min="30" max="200">
+                            <span>ft</span>
+                        </div>
+                        <div class="dimension-helper" id="dimensionHelper">
+                            <small>Area: <span id="totalArea">6,500</span> sq ft</small>
                         </div>
                     </div>
 
@@ -56,27 +80,23 @@
                     </div>
 
                     <div class="input-group">
-                        <label>Constraints</label>
-                        <div class="constraint-toggles">
-                            <label class="toggle">
-                                <input type="checkbox" id="officeConstraint" checked>
-                                <span class="slider"></span>
-                                Office Area
+                        <label>Processing Area (sq ft)</label>
+                        <div class="input-row">
+                            <input type="number" id="processingArea" value="150" min="100" max="500">
+                            <span>sq ft (computers, workstations)</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Optimization Method</label>
+                        <div class="method-selector">
+                            <label class="method-option">
+                                <input type="radio" name="optimizationMethod" value="genetic" checked>
+                                <span>Genetic Algorithm</span>
                             </label>
-                            <label class="toggle">
-                                <input type="checkbox" id="exitConstraint" checked>
-                                <span class="slider"></span>
-                                Emergency Exit
-                            </label>
-                            <label class="toggle">
-                                <input type="checkbox" id="utilityConstraint" checked>
-                                <span class="slider"></span>
-                                Utility Room
-                            </label>
-                            <label class="toggle">
-                                <input type="checkbox" id="pillarConstraint" checked>
-                                <span class="slider"></span>
-                                Support Pillars
+                            <label class="method-option">
+                                <input type="radio" name="optimizationMethod" value="grid">
+                                <span>Grid-Based</span>
                             </label>
                         </div>
                     </div>

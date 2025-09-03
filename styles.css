@@ -296,6 +296,105 @@ body {
     color: #2563eb;
 }
 
+/* Shape Selector */
+.shape-selector {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.shape-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.shape-option:hover {
+    border-color: #2563eb;
+    background: #f8fafc;
+}
+
+.shape-option input:checked + .shape-preview {
+    background: #2563eb;
+}
+
+.shape-option input {
+    display: none;
+}
+
+.shape-preview {
+    width: 30px;
+    height: 20px;
+    border: 2px solid #666;
+    background: #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.rectangular-shape {
+    width: 30px;
+    height: 20px;
+}
+
+.l-shape {
+    width: 30px;
+    height: 20px;
+    position: relative;
+    background: #f0f0f0;
+    clip-path: polygon(0% 0%, 60% 0%, 60% 40%, 100% 40%, 100% 100%, 0% 100%);
+}
+
+.t-shape {
+    width: 30px;
+    height: 20px;
+    position: relative;
+    background: #f0f0f0;
+    clip-path: polygon(0% 0%, 100% 0%, 100% 40%, 70% 40%, 70% 100%, 30% 100%, 30% 40%, 0% 40%);
+}
+
+.dimension-helper {
+    margin-top: 8px;
+    color: #666;
+}
+
+.method-selector {
+    display: flex;
+    gap: 15px;
+}
+
+.method-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    flex: 1;
+    justify-content: center;
+}
+
+.method-option:hover {
+    border-color: #2563eb;
+    background: #f8fafc;
+}
+
+.method-option input {
+    margin: 0;
+}
+
+.method-option input:checked + span {
+    color: #2563eb;
+    font-weight: 600;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .optimizer-container {

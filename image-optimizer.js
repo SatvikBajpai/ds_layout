@@ -563,12 +563,12 @@ class ImageLayoutOptimizer {
             if (this.selectedEdges.size >= 2) {
                 const calculateBtn = document.createElement('button');
                 calculateBtn.className = 'btn btn-primary';
-                calculateBtn.textContent = 'Calculate Optimal Layout';
+                calculateBtn.textContent = 'Calculate Optimal Rack Count';
                 calculateBtn.onclick = () => this.calculateOptimalLayout();
                 selectedDiv.appendChild(calculateBtn);
             } else {
                 const message = document.createElement('p');
-                message.textContent = 'Add at least 2 edge dimensions to calculate layout.';
+                message.textContent = 'Select at least 2 edges with dimensions to proceed.';
                 message.style.color = '#666';
                 message.style.fontStyle = 'italic';
                 selectedDiv.appendChild(message);
@@ -586,26 +586,37 @@ class ImageLayoutOptimizer {
     }
     
     calculateOptimalLayout() {
-        // Get dimensions from inputs
-        let validDimensions = 0;
-        for (const edge of this.detectedEdges) {
-            const input = document.getElementById(`edge-${edge.id}`);
-            const value = parseFloat(input.value);
-            if (value && value > 0) {
-                this.edgeDimensions[edge.id] = value;
-                validDimensions++;
-            }
-        }
-        
-        if (validDimensions < 2) {
-            alert('Please enter at least 2 edge dimensions to establish scale.');
+        if (this.selectedEdges.size < 2) {
+            alert('Please select at least 2 edges with dimensions to establish scale.');
             return;
         }
         
-        // Calculate scale and layout dimensions
+        // Calculate scale and layout dimensions first
         this.calculateScale();
-        this.calculateOptimalRackCount();
-        this.runOptimization();
+        
+        // Show the rack count group and calculate optimal racks
+        document.getElementById('rackCountGroup').style.display = 'block';
+        const optimalRacks = this.calculateOptimalRackCount();
+        
+        // Update UI to show the calculated rack count
+        document.getElementById('totalRacks').value = optimalRacks;
+        
+        // Show optimize button
+        this.showOptimizeButton();
+    }
+    
+    showOptimizeButton() {
+        // Remove existing optimize button if any
+        const existingBtn = document.querySelector('.final-optimize-btn');
+        if (existingBtn) existingBtn.remove();
+        
+        const container = document.getElementById('addedDimensions');
+        const optimizeBtn = document.createElement('button');
+        optimizeBtn.className = 'btn btn-primary btn-large final-optimize-btn';
+        optimizeBtn.textContent = 'Optimize Rack Placement';
+        optimizeBtn.style.marginTop = '20px';
+        optimizeBtn.onclick = () => this.runOptimization();
+        container.appendChild(optimizeBtn);
     }
     
     calculateScale() {
@@ -619,24 +630,51 @@ class ImageLayoutOptimizer {
     }
     
     calculateOptimalRackCount() {
-        // Get layout dimensions in feet
-        const widthFeet = this.edgeDimensions.top || this.edgeDimensions.bottom;
-        const heightFeet = this.edgeDimensions.left || this.edgeDimensions.right;
+        // Get layout dimensions from selected edges
+        let layoutWidth = 0, layoutHeight = 0;
         
-        if (!widthFeet || !heightFeet) return 0;
+        // Find horizontal and vertical dimensions from selected edges
+        for (const edgeId of this.selectedEdges) {
+            const edge = this.detectedEdges.find(e => e.id === edgeId);
+            const dimension = this.edgeDimensions[edgeId];
+            
+            if (edge && dimension) {
+                if (edge.direction === 'horizontal' && dimension > layoutWidth) {
+                    layoutWidth = dimension;
+                }
+                if (edge.direction === 'vertical' && dimension > layoutHeight) {
+                    layoutHeight = dimension;
+                }
+            }
+        }
         
-        const totalArea = widthFeet * heightFeet;
-        const processingArea = 150; // Fixed processing area
-        const aisleArea = (widthFeet + heightFeet) * 3; // Approximate aisle space
-        const usableArea = totalArea - processingArea - aisleArea;
+        if (!layoutWidth || !layoutHeight) {
+            console.warn('Could not determine layout dimensions');
+            return 20; // Default fallback
+        }
+        
+        console.log(`Layout dimensions: ${layoutWidth}ft × ${layoutHeight}ft`);
+        
+        const totalArea = layoutWidth * layoutHeight;
+        const processingArea = parseInt(document.getElementById('processingArea').value) || 150;
+        
+        // More sophisticated aisle calculation
+        const aisleWidth = 2.5; // feet
+        const estimatedAisleLength = (layoutWidth + layoutHeight) * 1.5; // Estimate total aisle length
+        const aisleArea = estimatedAisleLength * aisleWidth;
+        
+        // Safety margin for irregular shapes and access
+        const safetyMargin = totalArea * 0.1;
+        
+        const usableArea = totalArea - processingArea - aisleArea - safetyMargin;
+        
+        console.log(`Total: ${totalArea}sqft, Processing: ${processingArea}sqft, Aisles: ${Math.round(aisleArea)}sqft, Safety: ${Math.round(safetyMargin)}sqft, Usable: ${Math.round(usableArea)}sqft`);
         
         // Standard rack is 4x8 = 32 sq ft
         const rackArea = 32;
-        const maxRacks = Math.floor(usableArea / rackArea);
+        const maxRacks = Math.max(5, Math.floor(usableArea / rackArea));
         
-        // Update the input field
-        document.getElementById('totalRacks').value = Math.max(5, maxRacks);
-        
+        console.log(`Calculated optimal rack count: ${maxRacks}`);
         return maxRacks;
     }
     

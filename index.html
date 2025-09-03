@@ -50,12 +50,13 @@
                         </div>
                     </div>
 
-                    <div class="input-group">
+                    <div class="input-group" id="rackCountGroup" style="display: none;">
                         <label>Optimal Rack Count</label>
                         <div class="input-row">
-                            <input type="number" id="totalRacks" value="25" min="5" max="100" readonly>
+                            <input type="number" id="totalRacks" value="0" min="5" max="100" readonly>
                             <span>racks (calculated automatically)</span>
                         </div>
+                        <small style="color: #666; margin-top: 5px; display: block;">Based on layout area, processing space, and aisle requirements</small>
                     </div>
 
                     <div class="input-group">
@@ -80,9 +81,9 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary btn-large" onclick="optimizeLayout()">
-                        Optimize Layout
-                    </button>
+                    <p style="color: #666; font-style: italic; text-align: center; margin: 20px 0;">
+                        Upload an image and add dimensions to calculate optimal rack placement
+                    </p>
                 </div>
 
                 <!-- Visualization Panel -->
@@ -98,7 +99,7 @@
                     
                     <div class="layout-canvas" id="layoutCanvas">
                         <div class="canvas-placeholder">
-                            <p>Configure settings and click "Optimize Layout"</p>
+                            <p>Upload store layout image to begin optimization</p>
                         </div>
                     </div>
 

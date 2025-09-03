@@ -64,9 +64,14 @@ body {
 
 .optimizer-container {
     display: grid;
-    grid-template-columns: 400px 1fr;
-    gap: 40px;
+    grid-template-columns: 350px 1fr;
+    gap: 20px;
     margin-top: 40px;
+}
+
+.optimizer-container.full-layout {
+    grid-template-columns: 1fr;
+    max-width: 100%;
 }
 
 .config-panel {
@@ -342,12 +347,17 @@ body {
 .uploaded-image-container canvas {
     width: 100%;
     height: auto;
-    max-height: 600px;
+    max-height: 80vh;
     border: 2px solid #2563eb;
     border-radius: 8px;
-    cursor: crosshair;
+    cursor: default;
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.full-layout .uploaded-image-container canvas {
+    max-height: 85vh;
+    max-width: 100%;
 }
 
 .image-controls {
@@ -437,6 +447,37 @@ body {
     font-size: 0.8rem;
     cursor: pointer;
     margin-left: 10px;
+}
+
+.dimension-input-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    padding: 10px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+}
+
+.dimension-input-item label {
+    font-weight: 600;
+    color: #374151;
+    min-width: 80px;
+}
+
+.dimension-input-item input {
+    flex: 1;
+    max-width: 120px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.dimension-input-item span {
+    color: #6b7280;
+    font-size: 0.9rem;
 }
 
 .method-selector {

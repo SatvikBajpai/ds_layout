@@ -14,12 +14,9 @@ class ImageLayoutOptimizer {
         this.ctx = null;
         this.dimensions = [];
         this.scale = 1; // pixels per foot
-        this.isDimensionMode = false;
-        this.currentDimensionPoints = [];
-        this.zoomLevel = 1;
-        this.panOffset = { x: 0, y: 0 };
-        this.isDragging = false;
-        this.lastMousePos = { x: 0, y: 0 };
+        this.detectedEdges = [];
+        this.edgeDimensions = {}; // stores user-entered dimensions for each edge
+        this.layoutBounds = { width: 0, height: 0 };
         
         this.populationSize = 50;
         this.generations = 100;
@@ -96,38 +93,188 @@ class ImageLayoutOptimizer {
     drawImageToCanvas() {
         if (!this.uploadedImage || !this.canvas) return;
         
-        // Calculate base canvas size to fit image while maintaining aspect ratio
-        const maxWidth = this.isDimensionMode ? 800 : 600; // Much larger for dimension mode
-        const maxHeight = this.isDimensionMode ? 600 : 450;
+        // Use much larger canvas size for full layout view
+        const maxWidth = Math.min(window.innerWidth - 100, 1200);
+        const maxHeight = Math.min(window.innerHeight * 0.8, 800);
         const imgRatio = this.uploadedImage.width / this.uploadedImage.height;
         
-        let baseWidth, baseHeight;
+        let canvasWidth, canvasHeight;
         if (imgRatio > maxWidth / maxHeight) {
-            baseWidth = maxWidth;
-            baseHeight = maxWidth / imgRatio;
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth / imgRatio;
         } else {
-            baseHeight = maxHeight;
-            baseWidth = maxHeight * imgRatio;
+            canvasHeight = maxHeight;
+            canvasWidth = maxHeight * imgRatio;
         }
         
-        this.canvas.width = baseWidth;
-        this.canvas.height = baseHeight;
+        this.canvas.width = canvasWidth;
+        this.canvas.height = canvasHeight;
         
         // Clear canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Apply zoom and pan transforms
-        this.ctx.save();
-        this.ctx.translate(this.panOffset.x, this.panOffset.y);
-        this.ctx.scale(this.zoomLevel, this.zoomLevel);
+        this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         
         // Draw image
-        this.ctx.drawImage(this.uploadedImage, 0, 0, baseWidth, baseHeight);
+        this.ctx.drawImage(this.uploadedImage, 0, 0, canvasWidth, canvasHeight);
         
-        this.ctx.restore();
+        // Store layout bounds for calculations
+        this.layoutBounds = { width: canvasWidth, height: canvasHeight };
         
-        // Redraw dimensions (with transforms)
-        this.drawDimensions();
+        // Detect and draw edges
+        this.detectEdges();
+        this.drawDetectedEdges();
+    }
+    
+    detectEdges() {
+        // Simple edge detection - find major rectangular boundaries
+        const { width, height } = this.layoutBounds;
+        
+        // For now, detect basic rectangular edges based on image boundaries
+        this.detectedEdges = [
+            {
+                id: 'top',
+                name: 'Top Edge',
+                start: { x: 0, y: 0 },
+                end: { x: width, y: 0 },
+                length: width,
+                direction: 'horizontal'
+            },
+            {
+                id: 'right',
+                name: 'Right Edge', 
+                start: { x: width, y: 0 },
+                end: { x: width, y: height },
+                length: height,
+                direction: 'vertical'
+            },
+            {
+                id: 'bottom',
+                name: 'Bottom Edge',
+                start: { x: width, y: height },
+                end: { x: 0, y: height },
+                length: width,
+                direction: 'horizontal'
+            },
+            {
+                id: 'left',
+                name: 'Left Edge',
+                start: { x: 0, y: height },
+                end: { x: 0, y: 0 },
+                length: height,
+                direction: 'vertical'
+            }
+        ];
+    }
+    
+    drawDetectedEdges() {
+        this.ctx.strokeStyle = '#ff6b35';
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([10, 5]);
+        
+        for (const edge of this.detectedEdges) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(edge.start.x, edge.start.y);
+            this.ctx.lineTo(edge.end.x, edge.end.y);
+            this.ctx.stroke();
+            
+            // Draw edge label
+            const midX = (edge.start.x + edge.end.x) / 2;
+            const midY = (edge.start.y + edge.end.y) / 2;
+            
+            this.ctx.fillStyle = '#ff6b35';
+            this.ctx.font = 'bold 14px Arial';
+            this.ctx.textAlign = 'center';
+            
+            const labelY = edge.direction === 'horizontal' ? 
+                (edge.start.y === 0 ? midY + 20 : midY - 10) : midY;
+            const labelX = edge.direction === 'vertical' ?
+                (edge.start.x === 0 ? midX + 40 : midX - 40) : midX;
+                
+            this.ctx.fillText(edge.name, labelX, labelY);
+        }
+        
+        this.ctx.setLineDash([]);
+    }
+    
+    showDimensionInputs() {
+        const container = document.getElementById('addedDimensions');
+        container.innerHTML = '<h4>Enter dimensions for detected edges:</h4>';
+        
+        for (const edge of this.detectedEdges) {
+            const div = document.createElement('div');
+            div.className = 'dimension-input-item';
+            div.innerHTML = `
+                <label>${edge.name}:</label>
+                <input type="number" id="edge-${edge.id}" placeholder="Enter feet" min="1" step="0.1">
+                <span>feet</span>
+            `;
+            container.appendChild(div);
+        }
+        
+        const calculateBtn = document.createElement('button');
+        calculateBtn.className = 'btn btn-primary';
+        calculateBtn.textContent = 'Calculate Optimal Layout';
+        calculateBtn.onclick = () => this.calculateOptimalLayout();
+        container.appendChild(calculateBtn);
+    }
+    
+    calculateOptimalLayout() {
+        // Get dimensions from inputs
+        let validDimensions = 0;
+        for (const edge of this.detectedEdges) {
+            const input = document.getElementById(`edge-${edge.id}`);
+            const value = parseFloat(input.value);
+            if (value && value > 0) {
+                this.edgeDimensions[edge.id] = value;
+                validDimensions++;
+            }
+        }
+        
+        if (validDimensions < 2) {
+            alert('Please enter at least 2 edge dimensions to establish scale.');
+            return;
+        }
+        
+        // Calculate scale and layout dimensions
+        this.calculateScale();
+        this.calculateOptimalRackCount();
+        this.runOptimization();
+    }
+    
+    calculateScale() {
+        // Use first available dimension to calculate pixels per foot
+        for (const edge of this.detectedEdges) {
+            if (this.edgeDimensions[edge.id]) {
+                this.scale = edge.length / this.edgeDimensions[edge.id];
+                break;
+            }
+        }
+    }
+    
+    calculateOptimalRackCount() {
+        // Get layout dimensions in feet
+        const widthFeet = this.edgeDimensions.top || this.edgeDimensions.bottom;
+        const heightFeet = this.edgeDimensions.left || this.edgeDimensions.right;
+        
+        if (!widthFeet || !heightFeet) return 0;
+        
+        const totalArea = widthFeet * heightFeet;
+        const processingArea = 150; // Fixed processing area
+        const aisleArea = (widthFeet + heightFeet) * 3; // Approximate aisle space
+        const usableArea = totalArea - processingArea - aisleArea;
+        
+        // Standard rack is 4x8 = 32 sq ft
+        const rackArea = 32;
+        const maxRacks = Math.floor(usableArea / rackArea);
+        
+        // Update the input field
+        document.getElementById('totalRacks').value = Math.max(5, maxRacks);
+        
+        return maxRacks;
+    }
+    
+    runOptimization() {
+        // Trigger the existing optimization with calculated values
+        optimizeLayout();
     }
     
     handleDimensionClick(e) {
@@ -889,9 +1036,16 @@ function handleImageUpload(event) {
     const file = event.target.files[0];
     if (file) {
         optimizer.loadImage(file).then(() => {
-            // Show the uploaded image container
+            // Switch to full layout view
+            document.querySelector('.optimizer-container').classList.add('full-layout');
             document.getElementById('uploadedImageContainer').style.display = 'block';
             document.getElementById('imageUploadArea').style.display = 'none';
+            document.getElementById('dimensionsInputGroup').style.display = 'block';
+            
+            // Hide the old dimension mode button and show dimension inputs
+            document.getElementById('dimensionModeBtn').style.display = 'none';
+            optimizer.showDimensionInputs();
+            
         }).catch(error => {
             console.error('Error loading image:', error);
             alert('Error loading image. Please try again.');

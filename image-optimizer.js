@@ -149,22 +149,35 @@ class ImageLayoutOptimizer {
         const data = imageData.data;
         const edgeData = new Float32Array(width * height);
         
-        // Sobel kernels
-        const sobelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
-        const sobelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+        // Enhanced edge detection for architectural drawings
+        // First, create a binary mask of dark areas (likely walls)
+        const binaryData = new Uint8Array(width * height);
+        for (let i = 0; i < width * height; i++) {
+            const pixelIndex = i * 4;
+            const gray = (data[pixelIndex] + data[pixelIndex + 1] + data[pixelIndex + 2]) / 3;
+            // Consider pixels darker than 128 as potential walls
+            binaryData[i] = gray < 128 ? 255 : 0;
+        }
         
-        for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
+        // Apply morphological operations to clean up the binary image
+        const cleanBinary = this.morphologicalClose(binaryData, width, height);
+        
+        // Now apply edge detection to the cleaned binary image
+        for (let y = 2; y < height - 2; y++) {
+            for (let x = 2; x < width - 2; x++) {
                 let gx = 0, gy = 0;
                 
-                // Apply Sobel kernels
+                // Apply Sobel kernels to binary data
+                const sobelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+                const sobelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+                
                 for (let ky = -1; ky <= 1; ky++) {
                     for (let kx = -1; kx <= 1; kx++) {
-                        const pixelIndex = ((y + ky) * width + (x + kx)) * 4;
-                        const gray = (data[pixelIndex] + data[pixelIndex + 1] + data[pixelIndex + 2]) / 3;
+                        const pixelIndex = (y + ky) * width + (x + kx);
+                        const value = cleanBinary[pixelIndex];
                         
-                        gx += gray * sobelX[ky + 1][kx + 1];
-                        gy += gray * sobelY[ky + 1][kx + 1];
+                        gx += value * sobelX[ky + 1][kx + 1];
+                        gy += value * sobelY[ky + 1][kx + 1];
                     }
                 }
                 
@@ -177,15 +190,60 @@ class ImageLayoutOptimizer {
         return edgeData;
     }
     
+    morphologicalClose(binaryData, width, height) {
+        // Simple morphological closing (dilation followed by erosion)
+        const kernel = [
+            [1, 1, 1],
+            [1, 1, 1], 
+            [1, 1, 1]
+        ];
+        
+        // Dilation
+        const dilated = new Uint8Array(width * height);
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                let maxVal = 0;
+                for (let ky = -1; ky <= 1; ky++) {
+                    for (let kx = -1; kx <= 1; kx++) {
+                        const pixelIndex = (y + ky) * width + (x + kx);
+                        if (binaryData[pixelIndex] > maxVal) {
+                            maxVal = binaryData[pixelIndex];
+                        }
+                    }
+                }
+                dilated[y * width + x] = maxVal;
+            }
+        }
+        
+        // Erosion
+        const eroded = new Uint8Array(width * height);
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                let minVal = 255;
+                for (let ky = -1; ky <= 1; ky++) {
+                    for (let kx = -1; kx <= 1; kx++) {
+                        const pixelIndex = (y + ky) * width + (x + kx);
+                        if (dilated[pixelIndex] < minVal) {
+                            minVal = dilated[pixelIndex];
+                        }
+                    }
+                }
+                eroded[y * width + x] = minVal;
+            }
+        }
+        
+        return eroded;
+    }
+    
     detectLines(edgeData, width, height) {
         const lines = [];
-        const threshold = 100; // Edge strength threshold
-        const minLength = 30; // Minimum line length
+        const threshold = 30; // Lower threshold for architectural drawings
+        const minLength = 50; // Longer minimum length to avoid noise
         
         // Use simple line detection - scan for strong continuous edges
         
-        // Detect horizontal lines
-        for (let y = 10; y < height - 10; y += 3) {
+        // Detect horizontal lines - skip edges near canvas boundaries
+        for (let y = Math.floor(height * 0.05); y < height - Math.floor(height * 0.05); y += 2) {
             let lineStart = null;
             let strongPixels = 0;
             
@@ -230,8 +288,8 @@ class ImageLayoutOptimizer {
             }
         }
         
-        // Detect vertical lines
-        for (let x = 10; x < width - 10; x += 3) {
+        // Detect vertical lines - skip edges near canvas boundaries
+        for (let x = Math.floor(width * 0.05); x < width - Math.floor(width * 0.05); x += 2) {
             let lineStart = null;
             let strongPixels = 0;
             
@@ -423,9 +481,21 @@ class ImageLayoutOptimizer {
     }
     
     drawEdgeDetectionDebug() {
+        console.log('Drawing edge detection debug overlay');
+        
         // Show edge detection results as debug overlay
         const { width, height } = this.layoutBounds;
         const imageData = this.ctx.getImageData(0, 0, width, height);
+        
+        // Get binary mask for walls
+        const data = imageData.data;
+        const binaryData = new Uint8Array(width * height);
+        for (let i = 0; i < width * height; i++) {
+            const pixelIndex = i * 4;
+            const gray = (data[pixelIndex] + data[pixelIndex + 1] + data[pixelIndex + 2]) / 3;
+            binaryData[i] = gray < 128 ? 255 : 0;
+        }
+        
         const sobelData = this.applySobelFilter(imageData);
         
         // Create debug canvas overlay
@@ -435,15 +505,25 @@ class ImageLayoutOptimizer {
             const edgeStrength = Math.min(255, sobelData[i]);
             const pixelIndex = i * 4;
             
-            // Show edges in red
-            debugImageData.data[pixelIndex] = edgeStrength; // R
-            debugImageData.data[pixelIndex + 1] = 0; // G  
-            debugImageData.data[pixelIndex + 2] = 0; // B
-            debugImageData.data[pixelIndex + 3] = edgeStrength > 50 ? 128 : 0; // A (semi-transparent)
+            if (edgeStrength > 30) {
+                // Show strong edges in bright red
+                debugImageData.data[pixelIndex] = 255; // R
+                debugImageData.data[pixelIndex + 1] = 0; // G  
+                debugImageData.data[pixelIndex + 2] = 0; // B
+                debugImageData.data[pixelIndex + 3] = 200; // A (semi-transparent)
+            } else if (binaryData[i] > 128) {
+                // Show wall areas in blue
+                debugImageData.data[pixelIndex] = 0; // R
+                debugImageData.data[pixelIndex + 1] = 0; // G  
+                debugImageData.data[pixelIndex + 2] = 255; // B
+                debugImageData.data[pixelIndex + 3] = 50; // A (very transparent)
+            }
         }
         
         // Draw debug overlay
         this.ctx.putImageData(debugImageData, 0, 0);
+        
+        console.log('Debug overlay complete - red=detected edges, blue=wall areas');
     }
     
     checkEdgeHover(mouseX, mouseY) {

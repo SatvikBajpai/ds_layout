@@ -20,36 +20,33 @@
                     <h3>Configuration</h3>
                     
                     <div class="input-group">
-                        <label>Store Shape</label>
-                        <div class="shape-selector">
-                            <label class="shape-option">
-                                <input type="radio" name="storeShape" value="rectangular" checked>
-                                <span class="shape-preview rectangular-shape"></span>
-                                <span>Rectangular</span>
-                            </label>
-                            <label class="shape-option">
-                                <input type="radio" name="storeShape" value="l-shaped">
-                                <span class="shape-preview l-shape"></span>
-                                <span>L-Shaped</span>
-                            </label>
-                            <label class="shape-option">
-                                <input type="radio" name="storeShape" value="t-shaped">
-                                <span class="shape-preview t-shape"></span>
-                                <span>T-Shaped</span>
-                            </label>
+                        <label>Upload Store Layout Image</label>
+                        <div class="image-upload-area" id="imageUploadArea">
+                            <input type="file" id="layoutImageInput" accept="image/*" style="display: none;">
+                            <div class="upload-placeholder" onclick="document.getElementById('layoutImageInput').click()">
+                                <div class="upload-icon">📁</div>
+                                <p>Click to upload store layout image</p>
+                                <small>Supports: JPG, PNG, PDF floor plans</small>
+                            </div>
+                        </div>
+                        <div class="uploaded-image-container" id="uploadedImageContainer" style="display: none;">
+                            <canvas id="layoutCanvas" width="400" height="300"></canvas>
+                            <div class="image-controls">
+                                <button type="button" class="btn-small" onclick="clearImage()">Clear Image</button>
+                                <button type="button" class="btn-small" onclick="startDimensionMode()" id="dimensionModeBtn">Add Dimensions</button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="input-group">
-                        <label>Store Dimensions (feet)</label>
-                        <div class="input-row">
-                            <input type="number" id="storeWidth" value="65" min="30" max="200">
-                            <span>×</span>
-                            <input type="number" id="storeHeight" value="100" min="30" max="200">
-                            <span>ft</span>
+                    <div class="input-group" id="dimensionsInputGroup" style="display: none;">
+                        <label>Click on edges to add dimensions</label>
+                        <div class="dimension-instructions">
+                            <p>1. Click two points to create a dimension line</p>
+                            <p>2. Enter the actual measurement in feet</p>
+                            <p>3. Add at least 2 perpendicular dimensions for scale</p>
                         </div>
-                        <div class="dimension-helper" id="dimensionHelper">
-                            <small>Area: <span id="totalArea">6,500</span> sq ft</small>
+                        <div class="added-dimensions" id="addedDimensions">
+                            <!-- Dimensions will be listed here -->
                         </div>
                     </div>
 
@@ -149,6 +146,6 @@
         </div>
     </section>
 
-    <script src="optimizer.js"></script>
+    <script src="image-optimizer.js"></script>
 </body>
 </html>

@@ -296,71 +296,139 @@ body {
     color: #2563eb;
 }
 
-/* Shape Selector */
-.shape-selector {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 10px;
-}
-
-.shape-option {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    padding: 10px;
-    border: 2px solid #e2e8f0;
+/* Image Upload */
+.image-upload-area {
+    border: 2px dashed #d1d5db;
     border-radius: 8px;
+    padding: 20px;
+    text-align: center;
     transition: all 0.3s ease;
-    flex: 1;
+    cursor: pointer;
 }
 
-.shape-option:hover {
+.image-upload-area:hover {
     border-color: #2563eb;
     background: #f8fafc;
 }
 
-.shape-option input:checked + .shape-preview {
-    background: #2563eb;
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
 }
 
-.shape-option input {
-    display: none;
+.upload-icon {
+    font-size: 2rem;
 }
 
-.shape-preview {
-    width: 30px;
-    height: 20px;
-    border: 2px solid #666;
-    background: #f0f0f0;
+.upload-placeholder p {
+    margin: 0;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.upload-placeholder small {
+    color: #666;
+}
+
+.uploaded-image-container {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    background: white;
+}
+
+.uploaded-image-container canvas {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    cursor: crosshair;
+}
+
+.image-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.rectangular-shape {
-    width: 30px;
-    height: 20px;
+.btn-small:hover {
+    background: #e2e8f0;
 }
 
-.l-shape {
-    width: 30px;
-    height: 20px;
-    position: relative;
-    background: #f0f0f0;
-    clip-path: polygon(0% 0%, 60% 0%, 60% 40%, 100% 40%, 100% 100%, 0% 100%);
+.btn-small.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
 }
 
-.t-shape {
-    width: 30px;
-    height: 20px;
-    position: relative;
-    background: #f0f0f0;
-    clip-path: polygon(0% 0%, 100% 0%, 100% 40%, 70% 40%, 70% 100%, 30% 100%, 30% 40%, 0% 40%);
+.dimension-instructions {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 10px 0;
 }
 
-.dimension-helper {
-    margin-top: 8px;
+.dimension-instructions p {
+    margin: 5px 0;
     color: #666;
+    font-size: 0.9rem;
+}
+
+.added-dimensions {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px;
+    background: white;
+}
+
+.dimension-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    background: #f8fafc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.dimension-item .dimension-line {
+    color: #666;
+    flex: 1;
+}
+
+.dimension-item .dimension-value {
+    font-weight: 600;
+    color: #2563eb;
+    margin-left: 10px;
+}
+
+.dimension-item .remove-btn {
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-left: 10px;
 }
 
 .method-selector {

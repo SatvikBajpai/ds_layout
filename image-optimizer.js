@@ -101,144 +101,272 @@ class ImageLayoutOptimizer {
         // Detect and draw edges
         this.detectEdges();
         this.drawDetectedEdges();
+        
+        // Optional: Draw edge detection debug overlay
+        if (window.location.hash === '#debug') {
+            this.drawEdgeDetectionDebug();
+        }
     }
     
     detectEdges() {
-        // Advanced edge detection using image processing
+        // Real edge detection using image analysis
         const { width, height } = this.layoutBounds;
         const imageData = this.ctx.getImageData(0, 0, width, height);
         const edges = [];
         
-        // Detect edges using simple algorithm
-        const threshold = 50; // Edge detection threshold
-        const minLineLength = 20; // Minimum line length to consider
+        // Apply Sobel edge detection
+        const sobelData = this.applySobelFilter(imageData);
         
-        // Scan for horizontal edges
-        for (let y = 1; y < height - 1; y += 5) {
-            let currentEdge = null;
-            for (let x = 1; x < width - 1; x++) {
-                const pixelIndex = (y * width + x) * 4;
-                const topPixel = ((y - 1) * width + x) * 4;
-                const bottomPixel = ((y + 1) * width + x) * 4;
-                
-                // Check for significant color change (edge)
-                const currentGray = (imageData.data[pixelIndex] + imageData.data[pixelIndex + 1] + imageData.data[pixelIndex + 2]) / 3;
-                const topGray = (imageData.data[topPixel] + imageData.data[topPixel + 1] + imageData.data[topPixel + 2]) / 3;
-                const bottomGray = (imageData.data[bottomPixel] + imageData.data[bottomPixel + 1] + imageData.data[bottomPixel + 2]) / 3;
-                
-                const edgeStrength = Math.abs(topGray - bottomGray);
-                
-                if (edgeStrength > threshold) {
-                    if (!currentEdge) {
-                        currentEdge = { start: { x, y }, end: { x, y }, direction: 'horizontal' };
-                    } else {
-                        currentEdge.end.x = x;
-                    }
-                } else {
-                    if (currentEdge && (currentEdge.end.x - currentEdge.start.x) > minLineLength) {
-                        edges.push({
-                            ...currentEdge,
-                            id: `h_${edges.length}`,
-                            name: `Horizontal Edge ${Math.floor(currentEdge.start.y)}`,
-                            length: currentEdge.end.x - currentEdge.start.x
-                        });
-                    }
-                    currentEdge = null;
-                }
-            }
-            
-            if (currentEdge && (currentEdge.end.x - currentEdge.start.x) > minLineLength) {
-                edges.push({
-                    ...currentEdge,
-                    id: `h_${edges.length}`,
-                    name: `Horizontal Edge ${Math.floor(currentEdge.start.y)}`,
-                    length: currentEdge.end.x - currentEdge.start.x
-                });
-            }
+        // Find connected edge components using line detection
+        const detectedLines = this.detectLines(sobelData, width, height);
+        
+        // Convert detected lines to edge objects
+        for (let i = 0; i < detectedLines.length; i++) {
+            const line = detectedLines[i];
+            edges.push({
+                id: `edge_${i}`,
+                name: `${line.direction === 'horizontal' ? 'Horizontal' : 'Vertical'} Wall ${i + 1}`,
+                start: { x: line.x1, y: line.y1 },
+                end: { x: line.x2, y: line.y2 },
+                length: line.length,
+                direction: line.direction,
+                strength: line.strength
+            });
         }
-        
-        // Scan for vertical edges
-        for (let x = 1; x < width - 1; x += 5) {
-            let currentEdge = null;
-            for (let y = 1; y < height - 1; y++) {
-                const pixelIndex = (y * width + x) * 4;
-                const leftPixel = (y * width + (x - 1)) * 4;
-                const rightPixel = (y * width + (x + 1)) * 4;
-                
-                // Check for significant color change (edge)
-                const currentGray = (imageData.data[pixelIndex] + imageData.data[pixelIndex + 1] + imageData.data[pixelIndex + 2]) / 3;
-                const leftGray = (imageData.data[leftPixel] + imageData.data[leftPixel + 1] + imageData.data[leftPixel + 2]) / 3;
-                const rightGray = (imageData.data[rightPixel] + imageData.data[rightPixel + 1] + imageData.data[rightPixel + 2]) / 3;
-                
-                const edgeStrength = Math.abs(leftGray - rightGray);
-                
-                if (edgeStrength > threshold) {
-                    if (!currentEdge) {
-                        currentEdge = { start: { x, y }, end: { x, y }, direction: 'vertical' };
-                    } else {
-                        currentEdge.end.y = y;
-                    }
-                } else {
-                    if (currentEdge && (currentEdge.end.y - currentEdge.start.y) > minLineLength) {
-                        edges.push({
-                            ...currentEdge,
-                            id: `v_${edges.length}`,
-                            name: `Vertical Edge ${Math.floor(currentEdge.start.x)}`,
-                            length: currentEdge.end.y - currentEdge.start.y
-                        });
-                    }
-                    currentEdge = null;
-                }
-            }
-            
-            if (currentEdge && (currentEdge.end.y - currentEdge.start.y) > minLineLength) {
-                edges.push({
-                    ...currentEdge,
-                    id: `v_${edges.length}`,
-                    name: `Vertical Edge ${Math.floor(currentEdge.start.x)}`,
-                    length: currentEdge.end.y - currentEdge.start.y
-                });
-            }
-        }
-        
-        // Add boundary edges as well
-        edges.push(
-            {
-                id: 'boundary_top',
-                name: 'Top Boundary',
-                start: { x: 0, y: 0 },
-                end: { x: width, y: 0 },
-                length: width,
-                direction: 'horizontal'
-            },
-            {
-                id: 'boundary_right',
-                name: 'Right Boundary',
-                start: { x: width, y: 0 },
-                end: { x: width, y: height },
-                length: height,
-                direction: 'vertical'
-            },
-            {
-                id: 'boundary_bottom',
-                name: 'Bottom Boundary',
-                start: { x: width, y: height },
-                end: { x: 0, y: height },
-                length: width,
-                direction: 'horizontal'
-            },
-            {
-                id: 'boundary_left',
-                name: 'Left Boundary',
-                start: { x: 0, y: height },
-                end: { x: 0, y: 0 },
-                length: height,
-                direction: 'vertical'
-            }
-        );
         
         this.detectedEdges = edges;
-        console.log(`Detected ${edges.length} edges`);
+        console.log(`Detected ${edges.length} actual building edges`);
+        
+        // Log details about detected edges for debugging
+        edges.forEach((edge, i) => {
+            console.log(`Edge ${i}: ${edge.name} - ${edge.direction} from (${Math.round(edge.start.x)},${Math.round(edge.start.y)}) to (${Math.round(edge.end.x)},${Math.round(edge.end.y)}) length=${Math.round(edge.length)} strength=${edge.strength}`);
+        });
+    }
+    
+    applySobelFilter(imageData) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+        const edgeData = new Float32Array(width * height);
+        
+        // Sobel kernels
+        const sobelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+        const sobelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+        
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                let gx = 0, gy = 0;
+                
+                // Apply Sobel kernels
+                for (let ky = -1; ky <= 1; ky++) {
+                    for (let kx = -1; kx <= 1; kx++) {
+                        const pixelIndex = ((y + ky) * width + (x + kx)) * 4;
+                        const gray = (data[pixelIndex] + data[pixelIndex + 1] + data[pixelIndex + 2]) / 3;
+                        
+                        gx += gray * sobelX[ky + 1][kx + 1];
+                        gy += gray * sobelY[ky + 1][kx + 1];
+                    }
+                }
+                
+                // Calculate gradient magnitude
+                const magnitude = Math.sqrt(gx * gx + gy * gy);
+                edgeData[y * width + x] = magnitude;
+            }
+        }
+        
+        return edgeData;
+    }
+    
+    detectLines(edgeData, width, height) {
+        const lines = [];
+        const threshold = 100; // Edge strength threshold
+        const minLength = 30; // Minimum line length
+        
+        // Use simple line detection - scan for strong continuous edges
+        
+        // Detect horizontal lines
+        for (let y = 10; y < height - 10; y += 3) {
+            let lineStart = null;
+            let strongPixels = 0;
+            
+            for (let x = 5; x < width - 5; x++) {
+                const edgeStrength = edgeData[y * width + x];
+                
+                if (edgeStrength > threshold) {
+                    if (!lineStart) {
+                        lineStart = x;
+                        strongPixels = 1;
+                    } else {
+                        strongPixels++;
+                    }
+                } else {
+                    if (lineStart && strongPixels > minLength) {
+                        lines.push({
+                            x1: lineStart,
+                            y1: y,
+                            x2: x - 1,
+                            y2: y,
+                            length: x - lineStart,
+                            direction: 'horizontal',
+                            strength: strongPixels
+                        });
+                    }
+                    lineStart = null;
+                    strongPixels = 0;
+                }
+            }
+            
+            // Check for line at end of row
+            if (lineStart && strongPixels > minLength) {
+                lines.push({
+                    x1: lineStart,
+                    y1: y,
+                    x2: width - 5,
+                    y2: y,
+                    length: width - 5 - lineStart,
+                    direction: 'horizontal',
+                    strength: strongPixels
+                });
+            }
+        }
+        
+        // Detect vertical lines
+        for (let x = 10; x < width - 10; x += 3) {
+            let lineStart = null;
+            let strongPixels = 0;
+            
+            for (let y = 5; y < height - 5; y++) {
+                const edgeStrength = edgeData[y * width + x];
+                
+                if (edgeStrength > threshold) {
+                    if (!lineStart) {
+                        lineStart = y;
+                        strongPixels = 1;
+                    } else {
+                        strongPixels++;
+                    }
+                } else {
+                    if (lineStart && strongPixels > minLength) {
+                        lines.push({
+                            x1: x,
+                            y1: lineStart,
+                            x2: x,
+                            y2: y - 1,
+                            length: y - lineStart,
+                            direction: 'vertical',
+                            strength: strongPixels
+                        });
+                    }
+                    lineStart = null;
+                    strongPixels = 0;
+                }
+            }
+            
+            // Check for line at end of column
+            if (lineStart && strongPixels > minLength) {
+                lines.push({
+                    x1: x,
+                    y1: lineStart,
+                    x2: x,
+                    y2: height - 5,
+                    length: height - 5 - lineStart,
+                    direction: 'vertical',
+                    strength: strongPixels
+                });
+            }
+        }
+        
+        // Filter and merge nearby similar lines
+        return this.mergeSimilarLines(lines);
+    }
+    
+    mergeSimilarLines(lines) {
+        const merged = [];
+        const used = new Set();
+        const tolerance = 15; // Pixel tolerance for merging
+        
+        for (let i = 0; i < lines.length; i++) {
+            if (used.has(i)) continue;
+            
+            const line1 = lines[i];
+            const similarLines = [line1];
+            used.add(i);
+            
+            // Find similar lines to merge
+            for (let j = i + 1; j < lines.length; j++) {
+                if (used.has(j)) continue;
+                
+                const line2 = lines[j];
+                
+                if (line1.direction === line2.direction) {
+                    let similar = false;
+                    
+                    if (line1.direction === 'horizontal') {
+                        // Same horizontal line if y values are close
+                        if (Math.abs(line1.y1 - line2.y1) < tolerance) {
+                            similar = true;
+                        }
+                    } else {
+                        // Same vertical line if x values are close
+                        if (Math.abs(line1.x1 - line2.x1) < tolerance) {
+                            similar = true;
+                        }
+                    }
+                    
+                    if (similar) {
+                        similarLines.push(line2);
+                        used.add(j);
+                    }
+                }
+            }
+            
+            // Merge similar lines into one
+            if (similarLines.length > 0) {
+                const mergedLine = this.mergeLineGroup(similarLines);
+                merged.push(mergedLine);
+            }
+        }
+        
+        return merged;
+    }
+    
+    mergeLineGroup(lineGroup) {
+        const direction = lineGroup[0].direction;
+        let minX = Infinity, maxX = -Infinity;
+        let minY = Infinity, maxY = -Infinity;
+        let totalStrength = 0;
+        
+        for (const line of lineGroup) {
+            minX = Math.min(minX, line.x1, line.x2);
+            maxX = Math.max(maxX, line.x1, line.x2);
+            minY = Math.min(minY, line.y1, line.y2);
+            maxY = Math.max(maxY, line.y1, line.y2);
+            totalStrength += line.strength;
+        }
+        
+        if (direction === 'horizontal') {
+            const avgY = Math.round((minY + maxY) / 2);
+            return {
+                x1: minX,
+                y1: avgY,
+                x2: maxX,
+                y2: avgY,
+                length: maxX - minX,
+                direction: 'horizontal',
+                strength: totalStrength
+            };
+        } else {
+            const avgX = Math.round((minX + maxX) / 2);
+            return {
+                x1: avgX,
+                y1: minY,
+                x2: avgX,
+                y2: maxY,
+                length: maxY - minY,
+                direction: 'vertical',
+                strength: totalStrength
+            };
+        }
     }
     
     drawDetectedEdges() {
@@ -292,6 +420,30 @@ class ImageLayoutOptimizer {
         }
         
         this.ctx.setLineDash([]);
+    }
+    
+    drawEdgeDetectionDebug() {
+        // Show edge detection results as debug overlay
+        const { width, height } = this.layoutBounds;
+        const imageData = this.ctx.getImageData(0, 0, width, height);
+        const sobelData = this.applySobelFilter(imageData);
+        
+        // Create debug canvas overlay
+        const debugImageData = this.ctx.createImageData(width, height);
+        
+        for (let i = 0; i < sobelData.length; i++) {
+            const edgeStrength = Math.min(255, sobelData[i]);
+            const pixelIndex = i * 4;
+            
+            // Show edges in red
+            debugImageData.data[pixelIndex] = edgeStrength; // R
+            debugImageData.data[pixelIndex + 1] = 0; // G  
+            debugImageData.data[pixelIndex + 2] = 0; // B
+            debugImageData.data[pixelIndex + 3] = edgeStrength > 50 ? 128 : 0; // A (semi-transparent)
+        }
+        
+        // Draw debug overlay
+        this.ctx.putImageData(debugImageData, 0, 0);
     }
     
     checkEdgeHover(mouseX, mouseY) {

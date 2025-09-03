@@ -3,90 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dark Store Rack Optimizer | Industry-Level Layout Tool</title>
+    <title>Rack Layout Optimizer</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <i class="fas fa-warehouse"></i>
-                <span>Dark Store Optimizer</span>
-            </div>
-            <div class="nav-menu">
-                <a href="#home" class="nav-link">Home</a>
-                <a href="#optimizer" class="nav-link">Optimizer</a>
-                <a href="#dimensions" class="nav-link">Specifications</a>
-                <a href="#assumptions" class="nav-link">Assumptions</a>
-                <a href="#demo" class="nav-link">Demo</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="hero-container">
-            <div class="hero-content">
-                <h1 class="hero-title">Dark Store Rack <span class="highlight">Optimizer</span></h1>
-                <p class="hero-subtitle">Industry-level tool for optimal dark store rack placement with comprehensive scoring and real-time visualization</p>
-                <div class="hero-features">
-                    <div class="feature-item">
-                        <i class="fas fa-chart-line"></i>
-                        <span>AI-Powered Optimization</span>
-                    </div>
-                    <div class="feature-item">
-                        <i class="fas fa-cube"></i>
-                        <span>Multi-Rack Support</span>
-                    </div>
-                    <div class="feature-item">
-                        <i class="fas fa-eye"></i>
-                        <span>Real-time Visualization</span>
-                    </div>
-                </div>
-                <div class="hero-actions">
-                    <button class="btn btn-primary" onclick="scrollToOptimizer()">
-                        <i class="fas fa-play"></i>
-                        Try Optimizer
-                    </button>
-                    <button class="btn btn-secondary" onclick="scrollToSpecs()">
-                        <i class="fas fa-info-circle"></i>
-                        View Specifications
-                    </button>
-                </div>
-            </div>
-            <div class="hero-visual">
-                <div class="warehouse-animation">
-                    <div class="rack-grid">
-                        <div class="rack standard"></div>
-                        <div class="rack high-density"></div>
-                        <div class="rack freezer"></div>
-                        <div class="rack bulk"></div>
-                        <div class="rack standard"></div>
-                        <div class="rack high-density"></div>
-                    </div>
-                    <div class="optimization-score">
-                        <span class="score-label">Optimization Score</span>
-                        <span class="score-value" id="animated-score">85.2</span>
-                        <span class="score-unit">/100</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Optimizer Interface -->
     <section id="optimizer" class="optimizer-section">
         <div class="container">
-            <h2 class="section-title">Interactive Rack Optimizer</h2>
-            <p class="section-subtitle">Configure your dark store layout and get optimal rack placement instantly</p>
+            <h2 class="section-title">Rack Layout Optimizer</h2>
             
             <div class="optimizer-container">
                 <!-- Configuration Panel -->
                 <div class="config-panel">
-                    <h3>Layout Configuration</h3>
+                    <h3>Configuration</h3>
                     
                     <div class="input-group">
                         <label>Store Dimensions</label>
@@ -151,7 +82,6 @@
                     </div>
 
                     <button class="btn btn-primary btn-large" onclick="optimizeLayout()">
-                        <i class="fas fa-cogs"></i>
                         Optimize Layout
                     </button>
                 </div>
@@ -159,7 +89,7 @@
                 <!-- Visualization Panel -->
                 <div class="visualization-panel">
                     <div class="viz-header">
-                        <h3>Optimized Layout</h3>
+                        <h3>Layout</h3>
                         <div class="score-display">
                             <span class="score-label">Score:</span>
                             <span class="score-value" id="optimizationScore">--</span>
@@ -169,13 +99,12 @@
                     
                     <div class="layout-canvas" id="layoutCanvas">
                         <div class="canvas-placeholder">
-                            <i class="fas fa-warehouse"></i>
-                            <p>Configure settings and click "Optimize Layout" to see your optimized dark store</p>
+                            <p>Configure settings and click "Optimize Layout"</p>
                         </div>
                     </div>
 
                     <div class="metrics-panel" id="metricsPanel" style="display: none;">
-                        <h4>Performance Metrics</h4>
+                        <h4>Metrics</h4>
                         <div class="metrics-grid">
                             <div class="metric">
                                 <span class="metric-label">Layout Efficiency</span>
@@ -199,393 +128,6 @@
             </div>
         </div>
     </section>
-
-    <!-- Dimensions & Specifications -->
-    <section id="dimensions" class="dimensions-section">
-        <div class="container">
-            <h2 class="section-title">Rack Specifications & Dimensions</h2>
-            <p class="section-subtitle">Industry-standard rack dimensions and capacities used in optimization</p>
-            
-            <div class="specs-grid">
-                <div class="spec-card standard">
-                    <div class="spec-header">
-                        <div class="spec-icon">
-                            <i class="fas fa-cube"></i>
-                        </div>
-                        <h3>Standard Rack</h3>
-                        <span class="spec-tag">Most Common</span>
-                    </div>
-                    <div class="spec-dimensions">
-                        <div class="dimension">
-                            <span class="dim-label">Width</span>
-                            <span class="dim-value">1.2m</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Height</span>
-                            <span class="dim-value">2.4m</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Capacity</span>
-                            <span class="dim-value">200 units</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Area</span>
-                            <span class="dim-value">2.88m²</span>
-                        </div>
-                    </div>
-                    <div class="spec-description">
-                        General-purpose storage rack suitable for most product categories. Optimal balance between capacity and accessibility.
-                    </div>
-                </div>
-
-                <div class="spec-card high-density">
-                    <div class="spec-header">
-                        <div class="spec-icon">
-                            <i class="fas fa-layer-group"></i>
-                        </div>
-                        <h3>High-Density Rack</h3>
-                        <span class="spec-tag">Space Efficient</span>
-                    </div>
-                    <div class="spec-dimensions">
-                        <div class="dimension">
-                            <span class="dim-label">Width</span>
-                            <span class="dim-value">0.8m</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Height</span>
-                            <span class="dim-value">3.0m</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Capacity</span>
-                            <span class="dim-value">300 units</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Area</span>
-                            <span class="dim-value">2.40m²</span>
-                        </div>
-                    </div>
-                    <div class="spec-description">
-                        Vertical storage solution maximizing capacity per square meter. Ideal for small, lightweight items.
-                    </div>
-                </div>
-
-                <div class="spec-card freezer">
-                    <div class="spec-header">
-                        <div class="spec-icon">
-                            <i class="fas fa-snowflake"></i>
-                        </div>
-                        <h3>Freezer Rack</h3>
-                        <span class="spec-tag">Temperature Controlled</span>
-                    </div>
-                    <div class="spec-dimensions">
-                        <div class="dimension">
-                            <span class="dim-label">Width</span>
-                            <span class="dim-value">1.5m</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Height</span>
-                            <span class="dim-value">2.0m</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Capacity</span>
-                            <span class="dim-value">150 units</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Area</span>
-                            <span class="dim-value">3.00m²</span>
-                        </div>
-                    </div>
-                    <div class="spec-description">
-                        Specialized cold storage with insulated construction. Lower height for energy efficiency and accessibility.
-                    </div>
-                </div>
-
-                <div class="spec-card bulk">
-                    <div class="spec-header">
-                        <div class="spec-icon">
-                            <i class="fas fa-boxes"></i>
-                        </div>
-                        <h3>Bulk Storage Rack</h3>
-                        <span class="spec-tag">Heavy Duty</span>
-                    </div>
-                    <div class="spec-dimensions">
-                        <div class="dimension">
-                            <span class="dim-label">Width</span>
-                            <span class="dim-value">2.0m</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Height</span>
-                            <span class="dim-value">1.5m</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Capacity</span>
-                            <span class="dim-value">100 units</span>
-                        </div>
-                        <div class="dimension">
-                            <span class="dim-label">Area</span>
-                            <span class="dim-value">3.00m²</span>
-                        </div>
-                    </div>
-                    <div class="spec-description">
-                        Low-profile storage for heavy or bulky items. Easy loading and unloading with reduced lifting height.
-                    </div>
-                </div>
-            </div>
-
-            <!-- Aisle & Safety Specifications -->
-            <div class="safety-specs">
-                <h3>Aisle & Safety Requirements</h3>
-                <div class="safety-grid">
-                    <div class="safety-item">
-                        <i class="fas fa-route"></i>
-                        <div class="safety-info">
-                            <h4>Minimum Aisle Width</h4>
-                            <span>1.8 meters</span>
-                            <p>Standard picking aisle width for single-person operation</p>
-                        </div>
-                    </div>
-                    <div class="safety-item">
-                        <i class="fas fa-road"></i>
-                        <div class="safety-info">
-                            <h4>Main Aisle Width</h4>
-                            <span>2.5 meters</span>
-                            <p>Primary traffic routes for equipment and multiple personnel</p>
-                        </div>
-                    </div>
-                    <div class="safety-item">
-                        <i class="fas fa-shield-alt"></i>
-                        <div class="safety-info">
-                            <h4>Safety Clearance</h4>
-                            <span>0.5 meters</span>
-                            <p>Minimum clearance around obstacles and constraints</p>
-                        </div>
-                    </div>
-                    <div class="safety-item">
-                        <i class="fas fa-percentage"></i>
-                        <div class="safety-info">
-                            <h4>Optimal Aisle Ratio</h4>
-                            <span>30-40%</span>
-                            <p>Percentage of total floor space allocated to aisles</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Assumptions Section -->
-    <section id="assumptions" class="assumptions-section">
-        <div class="container">
-            <h2 class="section-title">Optimization Assumptions & Methodology</h2>
-            <p class="section-subtitle">Detailed assumptions and industry standards used in our optimization algorithm</p>
-            
-            <div class="assumptions-container">
-                <div class="assumption-category">
-                    <h3><i class="fas fa-calculator"></i> Scoring Algorithm</h3>
-                    <div class="assumption-list">
-                        <div class="assumption-item">
-                            <div class="assumption-weight">30%</div>
-                            <div class="assumption-content">
-                                <h4>Layout Efficiency</h4>
-                                <p>Ratio of rack area to total floor space. Higher utilization scores better, but must balance with accessibility.</p>
-                            </div>
-                        </div>
-                        <div class="assumption-item">
-                            <div class="assumption-weight">25%</div>
-                            <div class="assumption-content">
-                                <h4>Accessibility Score</h4>
-                                <p>Average distance from racks to entrance and loading dock. Shorter distances improve picking efficiency.</p>
-                            </div>
-                        </div>
-                        <div class="assumption-item">
-                            <div class="assumption-weight">25%</div>
-                            <div class="assumption-content">
-                                <h4>Workflow Efficiency</h4>
-                                <p>Grid regularity and rack arrangement patterns. Consistent layouts improve navigation and reduce picking time.</p>
-                            </div>
-                        </div>
-                        <div class="assumption-item">
-                            <div class="assumption-weight">20%</div>
-                            <div class="assumption-content">
-                                <h4>Density Optimization</h4>
-                                <p>How efficiently racks are clustered within their bounding area. Minimizes wasted space between rack groups.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="assumption-category">
-                    <h3><i class="fas fa-cogs"></i> Operational Assumptions</h3>
-                    <div class="assumption-grid">
-                        <div class="assumption-card">
-                            <i class="fas fa-walking"></i>
-                            <h4>Single-Person Picking</h4>
-                            <p>Aisle widths optimized for individual picker operation with standard equipment.</p>
-                        </div>
-                        <div class="assumption-card">
-                            <i class="fas fa-clock"></i>
-                            <h4>8-Hour Operation</h4>
-                            <p>Layout optimized for continuous operation with standard work shifts.</p>
-                        </div>
-                        <div class="assumption-card">
-                            <i class="fas fa-truck"></i>
-                            <h4>Single Loading Dock</h4>
-                            <p>One primary loading/unloading point for inventory replenishment.</p>
-                        </div>
-                        <div class="assumption-card">
-                            <i class="fas fa-door-open"></i>
-                            <h4>Single Main Entrance</h4>
-                            <p>Primary entry point for staff and order fulfillment operations.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="assumption-category">
-                    <h3><i class="fas fa-industry"></i> Industry Standards</h3>
-                    <div class="standards-list">
-                        <div class="standard-item">
-                            <div class="standard-icon">
-                                <i class="fas fa-warehouse"></i>
-                            </div>
-                            <div class="standard-content">
-                                <h4>Dark Store Best Practices</h4>
-                                <p>Based on industry leaders like Amazon, Instacart, and Ocado fulfillment centers. Optimized for high-velocity picking operations.</p>
-                            </div>
-                        </div>
-                        <div class="standard-item">
-                            <div class="standard-icon">
-                                <i class="fas fa-fire-extinguisher"></i>
-                            </div>
-                            <div class="standard-content">
-                                <h4>Safety Compliance</h4>
-                                <p>Adheres to OSHA and international warehouse safety standards. Includes emergency egress routes and fire safety clearances.</p>
-                            </div>
-                        </div>
-                        <div class="standard-item">
-                            <div class="standard-icon">
-                                <i class="fas fa-tachometer-alt"></i>
-                            </div>
-                            <div class="standard-content">
-                                <h4>Performance Benchmarks</h4>
-                                <p>Layout efficiency targets based on top-performing grocery fulfillment operations (60-75% space utilization).</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="assumption-category">
-                    <h3><i class="fas fa-exclamation-triangle"></i> Constraints & Limitations</h3>
-                    <div class="limitations-grid">
-                        <div class="limitation-item">
-                            <h4>Grid-Based Placement</h4>
-                            <p>Racks are placed on a regular grid system for simplicity. Does not consider diagonal or custom orientations.</p>
-                        </div>
-                        <div class="limitation-item">
-                            <h4>Static Load Distribution</h4>
-                            <p>Assumes uniform weight distribution. Does not account for floor load capacity variations.</p>
-                        </div>
-                        <div class="limitation-item">
-                            <h4>Rectangular Layouts</h4>
-                            <p>Optimized for rectangular store footprints. Complex shapes may require manual adjustment.</p>
-                        </div>
-                        <div class="limitation-item">
-                            <h4>Standard Equipment</h4>
-                            <p>Assumes standard picking carts and equipment. Specialized machinery may require wider aisles.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Demo Section -->
-    <section id="demo" class="demo-section">
-        <div class="container">
-            <h2 class="section-title">Live Demo Results</h2>
-            <p class="section-subtitle">Real optimization results from our industry-level algorithm</p>
-            
-            <div class="demo-results">
-                <div class="demo-stats">
-                    <div class="demo-stat">
-                        <div class="stat-icon">
-                            <i class="fas fa-trophy"></i>
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-value">85.2</span>
-                            <span class="stat-label">Optimization Score</span>
-                        </div>
-                    </div>
-                    <div class="demo-stat">
-                        <div class="stat-icon">
-                            <i class="fas fa-boxes"></i>
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-value">28/30</span>
-                            <span class="stat-label">Racks Placed</span>
-                        </div>
-                    </div>
-                    <div class="demo-stat">
-                        <div class="stat-icon">
-                            <i class="fas fa-chart-area"></i>
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-value">67.4%</span>
-                            <span class="stat-label">Space Efficiency</span>
-                        </div>
-                    </div>
-                    <div class="demo-stat">
-                        <div class="stat-icon">
-                            <i class="fas fa-cubes"></i>
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-value">5,850</span>
-                            <span class="stat-label">Total Capacity</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="demo-download">
-                    <h3>Download Sample Results</h3>
-                    <p>Get the complete optimization report and data files used in production environments</p>
-                    <div class="download-buttons">
-                        <a href="#" class="btn btn-outline" onclick="downloadReport()">
-                            <i class="fas fa-file-alt"></i>
-                            Optimization Report
-                        </a>
-                        <a href="#" class="btn btn-outline" onclick="downloadData()">
-                            <i class="fas fa-database"></i>
-                            Raw Data (JSON)
-                        </a>
-                        <a href="#" class="btn btn-outline" onclick="downloadVisualization()">
-                            <i class="fas fa-image"></i>
-                            Layout Visualization
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <i class="fas fa-warehouse"></i>
-                    <span>Dark Store Optimizer</span>
-                </div>
-                <div class="footer-links">
-                    <a href="https://github.com/SatvikBajpai/ds_layout" target="_blank">
-                        <i class="fab fa-github"></i>
-                        View on GitHub
-                    </a>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 Dark Store Rack Optimizer. Industry-level layout optimization tool.</p>
-            </div>
-        </div>
-    </footer>
 
     <script src="optimizer.js"></script>
 </body>

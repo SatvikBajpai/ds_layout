@@ -358,9 +358,6 @@ class RackOptimizer {
 document.addEventListener('DOMContentLoaded', function() {
     const optimizer = new RackOptimizer();
     
-    // Animated score counter
-    animateScore();
-    
     // Initialize optimizer
     window.optimizeLayout = function() {
         const config = {
@@ -512,45 +509,4 @@ document.addEventListener('DOMContentLoaded', function() {
         
         canvas.appendChild(svg);
     }
-    
-    function animateScore() {
-        const scoreElement = document.getElementById('animated-score');
-        const targetScore = 85.2;
-        let currentScore = 0;
-        const increment = targetScore / 100;
-        
-        const animation = setInterval(() => {
-            currentScore += increment;
-            if (currentScore >= targetScore) {
-                currentScore = targetScore;
-                clearInterval(animation);
-            }
-            scoreElement.textContent = currentScore.toFixed(1);
-        }, 30);
-    }
 });
-
-// Smooth scrolling functions
-function scrollToOptimizer() {
-    document.getElementById('optimizer').scrollIntoView({ behavior: 'smooth' });
-}
-
-function scrollToSpecs() {
-    document.getElementById('dimensions').scrollIntoView({ behavior: 'smooth' });
-}
-
-// Download functions (placeholder)
-function downloadReport() {
-    // In a real implementation, this would generate and download the optimization report
-    alert('Optimization report download would be implemented in the backend.');
-}
-
-function downloadData() {
-    // In a real implementation, this would generate and download the JSON data
-    alert('Data export download would be implemented in the backend.');
-}
-
-function downloadVisualization() {
-    // In a real implementation, this would generate and download the visualization
-    alert('Visualization download would be implemented in the backend.');
-}

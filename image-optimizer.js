@@ -40,8 +40,12 @@ class ImageLayoutOptimizer {
         });
         
         this.canvas.addEventListener('click', (e) => {
+            console.log('Canvas clicked, hovered edge:', this.hoveredEdge);
             if (this.hoveredEdge) {
+                console.log('Calling selectEdge with:', this.hoveredEdge);
                 this.selectEdge(this.hoveredEdge);
+            } else {
+                console.log('No edge hovered, click ignored');
             }
         });
         
@@ -527,8 +531,14 @@ class ImageLayoutOptimizer {
     }
     
     checkEdgeHover(mouseX, mouseY) {
-        const tolerance = 10; // Pixels
+        const tolerance = 15; // Increased tolerance for easier clicking
         let foundEdge = null;
+        let minDistance = Infinity;
+        
+        // Debug mouse position occasionally
+        if (Math.random() < 0.01) {
+            console.log('Mouse at:', Math.round(mouseX), Math.round(mouseY));
+        }
         
         for (const edge of this.detectedEdges) {
             const distance = this.distanceToLine(
@@ -537,13 +547,17 @@ class ImageLayoutOptimizer {
                 edge.end.x, edge.end.y
             );
             
-            if (distance < tolerance) {
+            if (distance < tolerance && distance < minDistance) {
                 foundEdge = edge.id;
-                break;
+                minDistance = distance;
             }
         }
         
         if (foundEdge !== this.hoveredEdge) {
+            if (foundEdge) {
+                const edge = this.detectedEdges.find(e => e.id === foundEdge);
+                console.log('Hovering over edge:', edge.name, 'distance:', Math.round(minDistance));
+            }
             this.hoveredEdge = foundEdge;
             this.canvas.style.cursor = foundEdge ? 'pointer' : 'default';
             this.drawImageToCanvas();
@@ -574,19 +588,37 @@ class ImageLayoutOptimizer {
     }
     
     selectEdge(edgeId) {
+        console.log('selectEdge called with edgeId:', edgeId);
+        
         const edge = this.detectedEdges.find(e => e.id === edgeId);
-        if (!edge) return;
+        if (!edge) {
+            console.error('Edge not found:', edgeId);
+            return;
+        }
+        
+        console.log('Found edge:', edge.name);
         
         if (this.selectedEdges.has(edgeId)) {
             // Deselect
+            console.log('Deselecting edge:', edge.name);
             this.selectedEdges.delete(edgeId);
             delete this.edgeDimensions[edgeId];
         } else {
             // Select and prompt for dimension
             const dimension = prompt(`Enter dimension for ${edge.name} (in feet):`);
+            console.log('User entered dimension:', dimension);
+            
             if (dimension && !isNaN(dimension) && parseFloat(dimension) > 0) {
+                const dimValue = parseFloat(dimension);
                 this.selectedEdges.add(edgeId);
-                this.edgeDimensions[edgeId] = parseFloat(dimension);
+                this.edgeDimensions[edgeId] = dimValue;
+                console.log('Successfully added dimension:', dimValue, 'for edge:', edge.name);
+                console.log('Selected edges now:', Array.from(this.selectedEdges));
+                console.log('Edge dimensions:', this.edgeDimensions);
+            } else {
+                console.warn('Invalid dimension entered:', dimension);
+                alert('Please enter a valid positive number for the dimension.');
+                return;
             }
         }
         
@@ -613,6 +645,9 @@ class ImageLayoutOptimizer {
     }
     
     updateDimensionsList() {
+        console.log('updateDimensionsList called, selected edges:', Array.from(this.selectedEdges));
+        console.log('Edge dimensions:', this.edgeDimensions);
+        
         const container = document.getElementById('addedDimensions');
         
         // Remove existing selected dimensions list
@@ -624,11 +659,15 @@ class ImageLayoutOptimizer {
             selectedDiv.className = 'selected-dimensions';
             selectedDiv.innerHTML = '<h4>Selected Edges:</h4>';
             
+            let validDimensions = 0;
             for (const edgeId of this.selectedEdges) {
                 const edge = this.detectedEdges.find(e => e.id === edgeId);
                 const dimension = this.edgeDimensions[edgeId];
                 
+                console.log(`Processing edge ${edgeId}:`, edge ? edge.name : 'NOT FOUND', 'dimension:', dimension);
+                
                 if (edge && dimension) {
+                    validDimensions++;
                     const item = document.createElement('div');
                     item.className = 'dimension-item';
                     item.innerHTML = `
@@ -637,24 +676,32 @@ class ImageLayoutOptimizer {
                         <button class="remove-btn" onclick="optimizer.removeEdgeDimension('${edgeId}')">×</button>
                     `;
                     selectedDiv.appendChild(item);
+                } else {
+                    console.warn('Invalid edge or dimension for:', edgeId);
                 }
             }
             
-            if (this.selectedEdges.size >= 2) {
+            console.log('Valid dimensions found:', validDimensions);
+            
+            if (validDimensions >= 2) {
                 const calculateBtn = document.createElement('button');
                 calculateBtn.className = 'btn btn-primary';
                 calculateBtn.textContent = 'Calculate Optimal Rack Count';
                 calculateBtn.onclick = () => this.calculateOptimalLayout();
                 selectedDiv.appendChild(calculateBtn);
+                console.log('Added calculate button');
             } else {
                 const message = document.createElement('p');
-                message.textContent = 'Select at least 2 edges with dimensions to proceed.';
+                message.textContent = `Select at least 2 edges with dimensions to proceed. (Currently: ${validDimensions})`;
                 message.style.color = '#666';
                 message.style.fontStyle = 'italic';
                 selectedDiv.appendChild(message);
+                console.log('Added message - need more dimensions');
             }
             
             container.appendChild(selectedDiv);
+        } else {
+            console.log('No selected edges to display');
         }
     }
     

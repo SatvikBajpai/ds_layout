@@ -342,11 +342,12 @@ body {
 .uploaded-image-container canvas {
     width: 100%;
     height: auto;
-    max-height: 450px;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
+    max-height: 600px;
+    border: 2px solid #2563eb;
+    border-radius: 8px;
     cursor: crosshair;
-    transition: max-height 0.3s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
 .image-controls {

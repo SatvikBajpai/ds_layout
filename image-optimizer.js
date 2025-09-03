@@ -97,8 +97,8 @@ class ImageLayoutOptimizer {
         if (!this.uploadedImage || !this.canvas) return;
         
         // Calculate base canvas size to fit image while maintaining aspect ratio
-        const maxWidth = this.isDimensionMode ? 600 : 400; // Larger when in dimension mode
-        const maxHeight = this.isDimensionMode ? 450 : 300;
+        const maxWidth = this.isDimensionMode ? 800 : 600; // Much larger for dimension mode
+        const maxHeight = this.isDimensionMode ? 600 : 450;
         const imgRatio = this.uploadedImage.width / this.uploadedImage.height;
         
         let baseWidth, baseHeight;
@@ -131,12 +131,29 @@ class ImageLayoutOptimizer {
     }
     
     handleDimensionClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const rect = this.canvas.getBoundingClientRect();
-        // Account for zoom and pan in coordinate calculation
-        const x = (e.clientX - rect.left - this.panOffset.x) / this.zoomLevel;
-        const y = (e.clientY - rect.top - this.panOffset.y) / this.zoomLevel;
+        // Much more accurate coordinate calculation
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        
+        const x = ((e.clientX - rect.left) * scaleX - this.panOffset.x) / this.zoomLevel;
+        const y = ((e.clientY - rect.top) * scaleY - this.panOffset.y) / this.zoomLevel;
         
         this.currentDimensionPoints.push({ x, y });
+        console.log(`Clicked point: (${Math.round(x)}, ${Math.round(y)})`);
+        
+        // Show visual feedback
+        this.drawImageToCanvas();
+        this.drawTemporaryPoints();
+        
+        if (this.currentDimensionPoints.length === 1) {
+            // First point clicked, show instruction for second point
+            const btn = document.getElementById('dimensionModeBtn');
+            btn.textContent = 'Click second point to complete dimension';
+        }
         
         if (this.currentDimensionPoints.length === 2) {
             // Ask user for dimension value
@@ -149,11 +166,11 @@ class ImageLayoutOptimizer {
                 );
             }
             this.currentDimensionPoints = [];
+            
+            // Reset button text
+            const btn = document.getElementById('dimensionModeBtn');
+            btn.textContent = 'Click 2 points to add dimension';
         }
-        
-        // Draw temporary point
-        this.drawImageToCanvas();
-        this.drawTemporaryPoints();
     }
     
     drawTemporaryPoints() {
@@ -162,10 +179,26 @@ class ImageLayoutOptimizer {
         this.ctx.scale(this.zoomLevel, this.zoomLevel);
         
         this.ctx.fillStyle = '#ff0000';
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 2 / this.zoomLevel;
+        
         for (const point of this.currentDimensionPoints) {
             this.ctx.beginPath();
-            this.ctx.arc(point.x, point.y, 3 / this.zoomLevel, 0, 2 * Math.PI);
+            this.ctx.arc(point.x, point.y, 5 / this.zoomLevel, 0, 2 * Math.PI);
             this.ctx.fill();
+            this.ctx.stroke();
+        }
+        
+        // Draw line between points if we have 2
+        if (this.currentDimensionPoints.length === 2) {
+            this.ctx.strokeStyle = '#ff0000';
+            this.ctx.lineWidth = 3 / this.zoomLevel;
+            this.ctx.setLineDash([5 / this.zoomLevel, 5 / this.zoomLevel]);
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.currentDimensionPoints[0].x, this.currentDimensionPoints[0].y);
+            this.ctx.lineTo(this.currentDimensionPoints[1].x, this.currentDimensionPoints[1].y);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
         }
         
         this.ctx.restore();
@@ -896,7 +929,7 @@ function startDimensionMode() {
     
     console.log('Entering dimension mode');
     optimizer.isDimensionMode = true;
-    optimizer.zoomLevel = 2; // Auto-zoom when entering dimension mode
+    optimizer.zoomLevel = 1.5; // Moderate zoom for better accuracy
     optimizer.panOffset = { x: 0, y: 0 }; // Reset pan
     
     document.getElementById('dimensionsInputGroup').style.display = 'block';
@@ -946,12 +979,10 @@ function optimizeLayout() {
         return;
     }
     
-    // Get rack quantities
+    // Get rack quantity (simplified to one type)
+    const totalRacks = parseInt(document.getElementById('totalRacks').value) || 25;
     const rackCounts = {
-        standard: parseInt(document.getElementById('standardRacks').value) || 0,
-        'high-density': parseInt(document.getElementById('highDensityRacks').value) || 0,
-        freezer: parseInt(document.getElementById('freezerRacks').value) || 0,
-        bulk: parseInt(document.getElementById('bulkRacks').value) || 0
+        standard: totalRacks
     };
     
     const processingArea = parseInt(document.getElementById('processingArea').value) || 150;

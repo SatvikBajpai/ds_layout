@@ -342,10 +342,11 @@ body {
 .uploaded-image-container canvas {
     width: 100%;
     height: auto;
-    max-height: 300px;
+    max-height: 450px;
     border: 1px solid #e2e8f0;
     border-radius: 4px;
     cursor: crosshair;
+    transition: max-height 0.3s ease;
 }
 
 .image-controls {
@@ -376,8 +377,8 @@ body {
 }
 
 .dimension-instructions {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: #f0f9ff;
+    border: 1px solid #0ea5e9;
     border-radius: 6px;
     padding: 15px;
     margin: 10px 0;
@@ -385,8 +386,14 @@ body {
 
 .dimension-instructions p {
     margin: 5px 0;
-    color: #666;
+    color: #0c4a6e;
     font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.dimension-instructions p:first-child {
+    font-weight: 600;
+    color: #0369a1;
 }
 
 .added-dimensions {

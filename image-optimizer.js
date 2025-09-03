@@ -16,6 +16,10 @@ class ImageLayoutOptimizer {
         this.scale = 1; // pixels per foot
         this.isDimensionMode = false;
         this.currentDimensionPoints = [];
+        this.zoomLevel = 1;
+        this.panOffset = { x: 0, y: 0 };
+        this.isDragging = false;
+        this.lastMousePos = { x: 0, y: 0 };
         
         this.populationSize = 50;
         this.generations = 100;
@@ -32,6 +36,42 @@ class ImageLayoutOptimizer {
             if (this.isDimensionMode) {
                 this.handleDimensionClick(e);
             }
+        });
+        
+        // Add zoom and pan functionality
+        this.canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            this.zoomLevel *= delta;
+            this.zoomLevel = Math.max(1, Math.min(5, this.zoomLevel)); // Limit zoom
+            this.drawImageToCanvas();
+        });
+        
+        // Pan functionality
+        this.canvas.addEventListener('mousedown', (e) => {
+            if (!this.isDimensionMode) {
+                this.isDragging = true;
+                this.lastMousePos = { x: e.clientX, y: e.clientY };
+            }
+        });
+        
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.isDragging && !this.isDimensionMode) {
+                const dx = e.clientX - this.lastMousePos.x;
+                const dy = e.clientY - this.lastMousePos.y;
+                this.panOffset.x += dx;
+                this.panOffset.y += dy;
+                this.lastMousePos = { x: e.clientX, y: e.clientY };
+                this.drawImageToCanvas();
+            }
+        });
+        
+        this.canvas.addEventListener('mouseup', () => {
+            this.isDragging = false;
+        });
+        
+        this.canvas.addEventListener('mouseleave', () => {
+            this.isDragging = false;
         });
     }
     
@@ -56,34 +96,45 @@ class ImageLayoutOptimizer {
     drawImageToCanvas() {
         if (!this.uploadedImage || !this.canvas) return;
         
-        // Calculate canvas size to fit image while maintaining aspect ratio
-        const maxWidth = 400;
-        const maxHeight = 300;
+        // Calculate base canvas size to fit image while maintaining aspect ratio
+        const maxWidth = this.isDimensionMode ? 600 : 400; // Larger when in dimension mode
+        const maxHeight = this.isDimensionMode ? 450 : 300;
         const imgRatio = this.uploadedImage.width / this.uploadedImage.height;
         
-        let canvasWidth, canvasHeight;
+        let baseWidth, baseHeight;
         if (imgRatio > maxWidth / maxHeight) {
-            canvasWidth = maxWidth;
-            canvasHeight = maxWidth / imgRatio;
+            baseWidth = maxWidth;
+            baseHeight = maxWidth / imgRatio;
         } else {
-            canvasHeight = maxHeight;
-            canvasWidth = maxHeight * imgRatio;
+            baseHeight = maxHeight;
+            baseWidth = maxHeight * imgRatio;
         }
         
-        this.canvas.width = canvasWidth;
-        this.canvas.height = canvasHeight;
+        this.canvas.width = baseWidth;
+        this.canvas.height = baseHeight;
+        
+        // Clear canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Apply zoom and pan transforms
+        this.ctx.save();
+        this.ctx.translate(this.panOffset.x, this.panOffset.y);
+        this.ctx.scale(this.zoomLevel, this.zoomLevel);
         
         // Draw image
-        this.ctx.drawImage(this.uploadedImage, 0, 0, canvasWidth, canvasHeight);
+        this.ctx.drawImage(this.uploadedImage, 0, 0, baseWidth, baseHeight);
         
-        // Redraw dimensions
+        this.ctx.restore();
+        
+        // Redraw dimensions (with transforms)
         this.drawDimensions();
     }
     
     handleDimensionClick(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        // Account for zoom and pan in coordinate calculation
+        const x = (e.clientX - rect.left - this.panOffset.x) / this.zoomLevel;
+        const y = (e.clientY - rect.top - this.panOffset.y) / this.zoomLevel;
         
         this.currentDimensionPoints.push({ x, y });
         
@@ -106,12 +157,18 @@ class ImageLayoutOptimizer {
     }
     
     drawTemporaryPoints() {
+        this.ctx.save();
+        this.ctx.translate(this.panOffset.x, this.panOffset.y);
+        this.ctx.scale(this.zoomLevel, this.zoomLevel);
+        
         this.ctx.fillStyle = '#ff0000';
         for (const point of this.currentDimensionPoints) {
             this.ctx.beginPath();
-            this.ctx.arc(point.x, point.y, 3, 0, 2 * Math.PI);
+            this.ctx.arc(point.x, point.y, 3 / this.zoomLevel, 0, 2 * Math.PI);
             this.ctx.fill();
         }
+        
+        this.ctx.restore();
     }
     
     addDimension(point1, point2, measurement) {
@@ -143,10 +200,14 @@ class ImageLayoutOptimizer {
     }
     
     drawDimensions() {
+        this.ctx.save();
+        this.ctx.translate(this.panOffset.x, this.panOffset.y);
+        this.ctx.scale(this.zoomLevel, this.zoomLevel);
+        
         this.ctx.strokeStyle = '#2563eb';
-        this.ctx.lineWidth = 2;
+        this.ctx.lineWidth = 2 / this.zoomLevel;
         this.ctx.fillStyle = '#2563eb';
-        this.ctx.font = '12px Arial';
+        this.ctx.font = `${12 / this.zoomLevel}px Arial`;
         
         for (const dimension of this.dimensions) {
             // Draw dimension line
@@ -157,18 +218,20 @@ class ImageLayoutOptimizer {
             
             // Draw end points
             this.ctx.beginPath();
-            this.ctx.arc(dimension.point1.x, dimension.point1.y, 3, 0, 2 * Math.PI);
+            this.ctx.arc(dimension.point1.x, dimension.point1.y, 3 / this.zoomLevel, 0, 2 * Math.PI);
             this.ctx.fill();
             
             this.ctx.beginPath();
-            this.ctx.arc(dimension.point2.x, dimension.point2.y, 3, 0, 2 * Math.PI);
+            this.ctx.arc(dimension.point2.x, dimension.point2.y, 3 / this.zoomLevel, 0, 2 * Math.PI);
             this.ctx.fill();
             
             // Draw measurement text
             const midX = (dimension.point1.x + dimension.point2.x) / 2;
             const midY = (dimension.point1.y + dimension.point2.y) / 2;
-            this.ctx.fillText(`${dimension.realMeasurement}'`, midX, midY - 5);
+            this.ctx.fillText(`${dimension.realMeasurement}'`, midX, midY - 5 / this.zoomLevel);
         }
+        
+        this.ctx.restore();
     }
     
     updateDimensionsList() {
@@ -831,9 +894,43 @@ function startDimensionMode() {
     }
     
     optimizer.isDimensionMode = true;
+    optimizer.zoomLevel = 2; // Auto-zoom when entering dimension mode
+    optimizer.panOffset = { x: 0, y: 0 }; // Reset pan
+    
     document.getElementById('dimensionsInputGroup').style.display = 'block';
-    document.getElementById('dimensionModeBtn').textContent = 'Adding Dimensions...';
+    document.getElementById('dimensionModeBtn').textContent = 'Click 2 points to add dimension';
     document.getElementById('dimensionModeBtn').classList.add('active');
+    
+    // Redraw with zoom
+    optimizer.drawImageToCanvas();
+    
+    // Add exit dimension mode button
+    if (!document.getElementById('exitDimensionBtn')) {
+        const exitBtn = document.createElement('button');
+        exitBtn.id = 'exitDimensionBtn';
+        exitBtn.type = 'button';
+        exitBtn.className = 'btn-small';
+        exitBtn.textContent = 'Exit Dimension Mode';
+        exitBtn.onclick = exitDimensionMode;
+        document.querySelector('.image-controls').appendChild(exitBtn);
+    }
+}
+
+function exitDimensionMode() {
+    optimizer.isDimensionMode = false;
+    optimizer.zoomLevel = 1; // Reset zoom
+    optimizer.panOffset = { x: 0, y: 0 }; // Reset pan
+    optimizer.currentDimensionPoints = [];
+    
+    document.getElementById('dimensionModeBtn').textContent = 'Add Dimensions';
+    document.getElementById('dimensionModeBtn').classList.remove('active');
+    
+    // Remove exit button
+    const exitBtn = document.getElementById('exitDimensionBtn');
+    if (exitBtn) exitBtn.remove();
+    
+    // Redraw without zoom
+    optimizer.drawImageToCanvas();
 }
 
 function optimizeLayout() {
